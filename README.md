@@ -12,6 +12,6 @@ Welcome to `securityPlayground` — a curated collection of resources, projects,
 
 - [Linux & System Administration](./Linux%20&%20System%20Administration/README.md) – Scripts, commands, and tutorials for Linux sysadmin tasks.
 
-- [Projects](./README.md) – Personal or practical projects to apply skills and concepts learned.
+- [Projects](./Projects/README.md) – Personal or practical projects to apply skills and concepts learned.
 
 - [SIEM & Security Monitoring](./SIEM%20&%20Security%20Monitoring/README.md) – Resources related to Wazuh, ELK stack, SIEM setup, and monitoring solutions.

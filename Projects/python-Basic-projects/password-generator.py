@@ -1,3 +1,5 @@
+# Creates Secret passwords to a file
+
 import string
 import secrets
 from random import randint

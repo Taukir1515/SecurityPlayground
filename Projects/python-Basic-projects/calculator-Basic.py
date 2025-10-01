@@ -1,3 +1,5 @@
+# Basic Calculator for basic calculation
+
 value=input("Enter numbers separated by comma: \n")
 numbers=value.split(",")
 

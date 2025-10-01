@@ -11,6 +11,7 @@ while True:
         value = int(input("Enter a random value within 1 to 5: "))
     except ValueError:
         print("Invalid input. Please enter a number within 1 to 5: ")
+        print("press 0 to stop trying")
         continue
     
     
@@ -18,15 +19,18 @@ while True:
         break
     elif value<1 or value>5:
         print("Value should be 1 to 5")
+        print("press 0 to stop trying")
         continue
 
     iteration=iteration+1
     
     if rand==value:
         print("You won!!")
+        print("press 0 to stop trying")
         count=count+1
     else:
         print(f"You lose. Correct guess is {rand}")
+        print("press 0 to stop trying")
 
 print("------------Result-----------------")        
 
@@ -39,7 +43,7 @@ else:
     print("Total try: ",iteration)
     print(f"Total win(s): {count}")
     print(f"Correct guess:{correct_guess:.2f}%")
-    print("If win percentage is below 25%, you lose.")
+    print("Win percentage is below 25%, you lose.")
     if correct_guess >25:
         print(f"Result: Winner Winner Chicken Dinner!! ({correct_guess:.2f}%)")
     else:
