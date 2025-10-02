@@ -19,7 +19,7 @@ network:
   version: 2
   renderer: networkd
   ethernets:
-    ens33:  # Check Interface name
+    ens33:  # Check Interface name using `ip a or ifconfig`
       dhcp4: no
       addresses: [192.168.1.100/24]
       gateway4: 192.168.1.1

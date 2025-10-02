@@ -1,4 +1,4 @@
-# Ubuntu root Partition Extension
+# Ubuntu root Partition Extension Process
 
 ## Check the Current Layout
 
@@ -23,7 +23,7 @@ sudo apt update
 sudo apt install cloud-guest-utils -y
 ```
 
-## Grow the Partition
+## Increase the Partition
 
 ```bash
 sudo growpart /dev/sda 3
@@ -32,23 +32,27 @@ sudo growpart /dev/sda 3
 
 - 3 --> the partition number (here sda3 is root)
 
-## Grow the Filesystem
+## Increase the File System
 
-### Check Filesystem:
+### Check File system
+
 ```bash
 df -T /
 ```
+
 ### If root is ext4:
+
 ```bash
 sudo resize2fs /dev/sda3
 ```
 
-### If root is xfs
+### If root is xfs:
 ```bash
 sudo xfs_growfs /
 ```
 
 ## Verify
+
 ```bash
 df -hT /
 ```
