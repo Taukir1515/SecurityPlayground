@@ -17,7 +17,8 @@ for y in range(10):
     passw=passw+1
     print(f"Password {passw} is {password}")
 
-    pass_file=open("password_list.txt","a")
+    pass_file=open(".\Projects\python-Basic-projects\password_list.txt","a")
+    #Projects\python-Basic-projects\password-generator.py
     pass_file.write(password + "\n") # creating new line for passwords
     pass_file.close()
 
