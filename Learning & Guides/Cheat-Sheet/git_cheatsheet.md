@@ -30,6 +30,7 @@ foreach ($Repo in $Repos) {
 
 ## 🔹 Most Useful Commands
 ```bash
+git config --global --add safe.directory "C:/Users/User/path/to/clone/repo"     # Tells Git you trust the repository location so Git won't                                                                                  block operations
 git status                      # Show changes
 git add <file_name>             # Stage file
 git add .                       # Stage all files in the current directory and all its subdirectories.
