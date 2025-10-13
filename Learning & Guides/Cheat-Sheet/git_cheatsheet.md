@@ -1,5 +1,11 @@
 # 📝 Git Commands Cheatsheet
 
+# 🔹 Install git in Desktop
+Link
+```
+https://git-scm.com/downloads/win
+```
+
 ## 🔹 Setup & Configuration
 ```bash
 git config --global user.name "Your Name"
