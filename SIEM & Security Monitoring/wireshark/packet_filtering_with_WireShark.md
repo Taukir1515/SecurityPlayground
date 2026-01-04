@@ -31,6 +31,11 @@
 - [Detection of Data Exfiltration via ICMP](#detection-of-data-exfiltration-via-icmp)
   - [Indicators of Attack](#indicators-of-attack-3)
   - [ICMP Filters](#icmp-filters)
+- [Detection of MITM Attack via ARP](#detection-of-mitm-attack-via-arp)
+  - [ARP Spoofing](#arp-spoofing)
+  - [Indicators of the Attack](#indicators-of-the-attack)
+  - [ARP Filter](#arp-filter)
+  - [Questions](#questions-5)
 
 
 ## Protocol Filters
@@ -229,13 +234,18 @@ tcp.checksum.status == 0
 
 ### DNS Filters
 
-| Analysis Goal | Wireshark Filter | Purpose |
-|--------------|------------------|---------|
-| Show all DNS packets | `dns` | Display all DNS traffic |
-| DNS queries with no response | `dns.flags.response == 0` | Identify failed, unanswered, or suspicious DNS queries |
-| Find long DNS queries | `dns && frame.len > 70` | Detect suspicious long subdomains (possible DNS tunneling) |
-| Filter suspicious domain queries | `dns && dns.qry.name contains <REDACTED>` | Isolate DNS traffic related to a known suspicious domain |
-
+| Step | Analysis Goal | Wireshark Filter | Purpose |
+|------|---------------|------------------|---------|
+| 1 | Show all DNS traffic | `dns` | Display all DNS packets for baseline visibility. |
+| 2 | Identify DNS queries without responses | `dns.flags.response == 0` | Detect failed, unanswered, or potentially suspicious DNS queries. |
+| 3 | Detect unusually long DNS queries | `dns && frame.len > 70` | Identify suspicious long subdomains (possible DNS tunneling). |
+| 4 | Isolate suspicious domain queries | `dns && dns.qry.name contains <REDACTED>` | Focus analysis on known or suspected malicious domains. |
+| 5 | View all DNS responses | `dns.flags.response == 1` | Examine all DNS replies in the capture. |
+| 6 | Observe legitimate DNS server behavior | `dns.flags.response == 1 && ip.src == 8.8.8.8` | Establish a baseline of normal DNS responses from a trusted server. |
+| 7 | Identify DNS responses from non-standard servers | `dns.flags.response == 1 && ip.src != 8.8.8.8` | Detect responses originating from unexpected or rogue DNS servers. |
+| 8 | Inspect DNS traffic for a domain of interest | `dns && dns.qry.name == "corp-login.acme-corp.local"` | Analyze all DNS queries and responses for the target domain. |
+| 9 | Verify legitimate DNS responses for the domain | `dns.flags.response == 1 && ip.src == 8.8.8.8 && dns.qry.name == "corp-login.acme-corp.local"` | Confirm normal and expected DNS resolution behavior. |
+|10 | Detect DNS spoofing attempts | `dns.flags.response == 1 && ip.src != 8.8.8.8 && dns.qry.name == "corp-login.acme-corp.local"` | Identify rogue systems responding with spoofed DNS answers. |
 
 
 
@@ -266,6 +276,25 @@ After using the above filter,
 
     e. Look at the Source Address
       - The IP with the highest packet count is the answer
+
+> 3. How many DNS responses were observed for the domain corp-login.acme-corp.local?
+
+```
+(dns.flags.response==1) and _ws.col.info contains "corp-login.acme-corp.local"
+```
+
+> 4. How many DNS requests were observed from the IPs other than 8.8.8.8?
+
+```
+(dns.flags.response==1) && !(ip.src == 8.8.8.8)
+```
+> 5. What IP did the attacker’s forged DNS response return for the domain?
+
+```
+(dns.flags.response==1) && !(ip.src == 8.8.8.8)
+```
+- The answer is the Source IP. 
+
 
 
 ## Detection of Data Exfiltration through FTP
@@ -376,6 +405,61 @@ ftp contains "csv"
 | Show all ICMP traffic | `icmp` | Display all ICMP packets |
 | Isolate ICMP Echo Requests | `icmp.type == 8` | Identify ping (echo request) activity |
 | Detect large ICMP Echo Requests | `icmp.type == 8 && frame.len > 100` | Identify suspicious ICMP payloads or possible tunneling |
+
+
+## Detection of MITM Attack via ARP 
+
+### ARP Spoofing
+
+In ARP spoofing, an attacker sends fake ARP replies to trick devices into associating the **attacker’s MAC address** with **a legitimate IP**, usually the default gateway. This allows the attacker to intercept, modify, or redirect traffic.
+
+### Indicators of the Attack
+
+1. Duplicate MAC-to-IP Mappings: Multiple MAC addresses claiming the same IP address. Indicates impersonation.  
+2. Unsolicited ARP Replies: High number of ARP replies without matching requests ("gratuitous ARP").  
+3. Abnormal ARP Traffic Volume: A Large number of ARP packets in short intervals.  
+4. Unusual Traffic Routing: Traffic rerouted through the attacker’s MAC.  
+5. Gateway Redirection Patterns: Multiple destination MACs for the same gateway IP.  
+6. ARP Probe / Reply Loops: Many ARP requests with **Who has 192.168.1.x? Tell 192.168.1.y** patterns.
+
+
+### ARP Filter
+
+
+| Step | Description | Wireshark Filter / Action | Purpose |
+|------|-------------|---------------------------|---------|
+| 1 | Isolate ARP traffic | `arp` | Inspect all ARP requests and replies to identify abnormal volume or patterns. |
+| 2 | View ARP requests | `arp.opcode == 1` | Analyze who is requesting MAC addresses (ARP requests). |
+| 3 | View ARP responses | `arp.opcode == 2` | Check responses; forged ARP poisoning often uses unsolicited ARP replies (gratuitous). |
+| 4 | Identify gratuitous ARP replies | `arp.isgratuitous` | Detect repeated unsolicited ARP replies, which may indicate an attacker maintaining a poisoned state. |
+| 5 | Examine ARP traffic for Gateway | `arp && arp.src.proto_ipv4 == 192.168.10.1 && eth.src == 02:aa:bb:cc:00:01` | Inspect ARP responses from the gateway and verify normal behavior. |
+| 6 | Narrow down Gateway ARP responses | `arp.opcode == 2 && arp.src.proto_ipv4 == 192.168.10.1` | Identify all ARP replies from the gateway IP. |
+| 7 | Detect potential ARP spoofing | `arp.opcode == 2 && _ws.col.info contains "192.168.10.1 is at"` | Spot ARP replies where the gateway IP is mapped to a suspicious MAC address. Here, **_ws → internal Wireshark namespace, col → column, info → the Info column text**|
+| 8 | Identify the attacker’s MAC | `arp.opcode == 2 && arp.src.proto_ipv4 == 192.168.10.1 && eth.src == 02:fe:fe:fe:55:55` | Confirm the MAC address of the host performing ARP spoofing. |
+| 9 | Check for duplicate IP-to-MAC mappings | `arp.duplicate-address-detected or arp.duplicate-address-frame` | Validate conflicting MAC addresses assigned to the same IP, confirming ARP spoofing. |
+
+
+### Questions
+
+> 1. How many ARP packets from the gateway MAC Address were observed?
+
+```
+arp and arp.src.proto_ipv4 == 192.168.10.1 and arp.src.hw_mac == 02:aa:bb:cc:00:01
+```
+> 2. What MAC address was used by the attacker to impersonate the gateway?
+
+```
+(arp and arp.src.proto_ipv4 == 192.168.10.1) 
+```
+
+> 3. How many Gratuitous ARP replies were observed for 192.168.10.1?
+
+```
+arp and arp.isgratuitous && arp.src.proto_ipv4 == 192.168.10.1
+```
+
+
+
 
 
 
