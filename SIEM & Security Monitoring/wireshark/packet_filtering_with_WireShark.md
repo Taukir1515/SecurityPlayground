@@ -458,6 +458,34 @@ arp and arp.src.proto_ipv4 == 192.168.10.1 and arp.src.hw_mac == 02:aa:bb:cc:00:
 arp and arp.isgratuitous && arp.src.proto_ipv4 == 192.168.10.1
 ```
 
+## Detection of MITM Attack via TLS/SSL
+
+### How It Works
+
+1. The victim initiates an HTTPS request to a website.
+2. The attacker intercepts the request using ARP spoofing or a rogue access point.
+3. The attacker connects to the website over HTTPS but relays the response to the victim through HTTP.
+4. The victim unknowingly interacts over HTTP, exposing sensitive data in plaintext.
+
+### Indicators of SSL stripping
+
+1. **Initial Request vs. Response:** The user's initial request may be for HTTPS (port 443), but the subsequent packets immediately shift to unencrypted HTTP (port 80) for the same domain.
+  
+2. **Redirects/Link Rewriting:** Monitoring for redirects (HTTP Status Codes 301, 302) that persistently direct an HTTPS request to an HTTP resource.
+
+3. **Certificate Errors:** Although the attacker usually tries to hide this, the initial TLS/SSL Handshake may fail or display a self-signed certificate if the attacker uses a more direct proxying technique.
+
+
+
+
+# SSL Stripping Detection Filter
+
+| Step | Analysis Goal | Wireshark Filter | Explanation |
+|-----|---------------|------------------|-------------|
+| 1 | Isolate HTTPS / TLS traffic | `tls or ssl` | Filters all TLS/SSL traffic to inspect encrypted communications and identify anomalies. |
+| 2 | Verify normal TLS usage by the server | `tls.handshake.type == 1 && tls.handshake.extensions_server_name == "corp-login.acme-corp.local"` | Displays Client Hello messages proving that the legitimate site normally uses TLS. |
+| 3 | Identify DNS spoofing (redirect before stripping) | `dns.flags.response == 1 && ip.src == 192.168.10.55 && dns.qry.name == "corp-login.acme-corp.local"` | Shows malicious DNS responses from the attacker, redirecting the victim to the attacker’s IP. |
+| 4 | Verify disappearance of TLS after spoofing | `http && ip.src == 192.168.10.10 && ip.dst == 192.168.10.55` | Confirms SSL stripping by showing HTTP traffic instead of HTTPS after DNS redirection. |
 
 
 
