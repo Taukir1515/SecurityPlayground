@@ -1,0 +1,1 @@
+# TI Map IP Entity to CommonSecurityLog
