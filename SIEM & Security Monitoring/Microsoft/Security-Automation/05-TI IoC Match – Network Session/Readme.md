@@ -1,4 +1,4 @@
-# TI Map IP Entity to SigninLogs
+# TI IoC Match – Network Session
 
 ## Sentinel Automation Rule
 
@@ -11,10 +11,9 @@
 
 ### Run Query and List Results
 
-See the [KQL Query](./KQL.md) for TI Map IP Entity to SigninLogs
+See the [KQL Query](./KQL.md) for TI IoC Match – Network Session
 
 
 ### Send an email (V2)
 
 See email format [here](./email.md)
-
