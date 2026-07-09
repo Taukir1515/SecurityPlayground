@@ -231,7 +231,7 @@ curl facebook.com
 ![forward-traffic](./image/image8.png)
 
 ## Check on Syslog Server
-
+Firewall log forwards to syslog server in CEF format.  
 Destination shows the Facebook IP address.
 
 ![syslog-check](./image/image9.png)
