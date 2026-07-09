@@ -1,138 +1,18 @@
 # Basic Architecture
 ```
-Server-01 ──Syslog──► FortiGate
-Server-03 ──Syslog──► FortiGate
-Server-04 ──Syslog──► FortiGate
-
-FortiGate ──Syslog/CEF──► Ubuntu Collector (Server-02)
-                                 │
-                                 │ AMA Connector
-                                 ▼
-                            Sentinel
+Server-01 ──Syslog traffic──► FortiGate──►Internet
+                                  │
+                                  ▼
+                            Syslog/CEF log ──► syslog server
+                                  │
+                                  │ AMA Connector
+                                  ▼
+                               Sentinel
 ``` 
 
 ![Basic Architecture](./image/fortigate-project.png)
 
-```
-Ubuntu-01 
-10.10.10.100
-      │
-      ▼
-FortiGate LAN
-10.10.10.120
-      │
-      ▼
-FortiGate WAN
-192.168.64.120
-      │
-      ▼
-Internet
 
-
-```
-
-
-
-
-# Credentials
-## Fortinet Firewall
-```
-Fortigate
-login : admin
-pass : Taukir@123456
-Interface: NAT
-port1: 192.168.64.120/24
-```
-## Log Generator (server-01)
-
-```
-Ubuntu-server-01
-user: ubuntu
-pass: 1212
-Interface: NAT ens33
-IP Address: 192.168.64.100/24
-```
-## Log Collector (server-02)
-
-```
-Ubuntu-server-02
-user: ubuntu
-pass: 1212
-Interface: NAT ens33
-IP Address: 192.168.64.110/24
-```
-
-
-# Netplan Configuration for Static IP (Ubuntu Server)
-```
-network:
-  version: 2
-  renderer: networkd
-  ethernets:
-    ens33:
-      addresses:
-        - 192.168.64.128/24
-      routes:
-        - to: default
-          via: 192.168.64.2
-      nameservers:
-        addresses:
-          - 8.8.8.8
-          - 1.1.1.1
-```
-
-# Fortigate Commands:
-```
-? # Show available commands 
-
-get system status
-show
-config system interface
-get system interface
-execute ping 8.8.8.8
-```
-
-
-# Configure Static IP on FortiGate:
-```
-config system interface
-edit port1
-set mode static
-set ip 192.168.64.120 255.255.255.0 # Static IP
-set allowaccess ping https ssh http  # Allow services
-next
-end
-```
-
-# Configure Default Route
-```
-config router static
-edit 1
-set gateway 192.168.64.2
-set device port1
-next
-end
-```
-
-## Verify IP and Route Configuration:
-```
-get system interface
-get router info routing-table all
-execute ping 8.8.8.8
-```
-
-# Log Relaying
-## server-02 (Log collector)
-```
-sudo tcpdump -nn -A host 192.168.64.120 and port 514
-```
-
-## server-1 (Log Generator)
-```
-logger "FORTI_RELAY_TEST_001"
-```
-
-=====================
 # Fortigate Firewall
 
 ## Install Fortigate Firewall
@@ -291,7 +171,7 @@ network :
         - 10.10.10.100/24
       routes:
         - to: default
-          via: 10.10.10.120
+          via: 10.10.10.120 # Gateway is firewall Host-only IP
       nameservers:
         addresses:
         - 8.8.8.8
