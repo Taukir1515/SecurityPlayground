@@ -1,13 +1,15 @@
+# Fortigate-Syslog-Sentinel Lab
+
 # Basic Architecture
 ```
 Server-01 ──Syslog traffic──► FortiGate──►Internet
                                   │
                                   ▼
                             Syslog/CEF log ──► syslog server
-                                  │
-                                  │ AMA Connector
-                                  ▼
-                               Sentinel
+                                                  │
+                                                  │ AMA Connector
+                                                  ▼
+                                              Sentinel
 ``` 
 
 ![Basic Architecture](./image/fortigate-project.png)
