@@ -11,7 +11,7 @@ FortiGate ──Syslog/CEF──► Ubuntu Collector (Server-02)
                             Sentinel
 ``` 
 
-![Basic Architecture](./arc/fortigate-project.png)
+![Basic Architecture](./image/fortigate-project.png)
 
 ```
 Ubuntu-01 
@@ -185,14 +185,14 @@ show system global | grep timezone
 
 ## Add Interfaces in VMware
 
-![alt text](./arc/image1.png)
+![alt text](./image/image1.png)
 
 ## Configure Network Interface via GUI (Option-1)
 Fortinet requires two Network Interfaces, NAT and Host-only.
 
-![alt text](./arc/image2.png)
-![alt text](./arc/image3.png)
-![alt text](./arc/image4.png)
+![alt text](./image/image2.png)
+![alt text](./image/image3.png)
+![alt text](./image/image4.png)
 
 ## Configure Network Interface via Command Line (Option-2)
 
@@ -233,7 +233,7 @@ end
 
 ### Firewall Policy via GUI
 
-![firewall policy](./arc/image5.png)
+![firewall policy](./image/image5.png)
 
 ### Firewall Policy via CLI
 ```
@@ -273,7 +273,7 @@ end
 > Server Should be at Host-only Interface
 
 ## Add Interface in VMware
-![log gen-interface](./arc/image6.png)
+![log gen-interface](./image/image6.png)
 
 
 ## Configure Netplan for Static IP
@@ -306,7 +306,7 @@ netplan apply
 # Syslog Server
 ## Add Interface in VMware
 
-![syslog-server-interface](./arc/image7.png)
+![syslog-server-interface](./image/image7.png)
 
 
 ## Configure Netplan for Static IP
@@ -348,10 +348,11 @@ curl facebook.com
 
 ## Check on Firewall 
 
-![forward-traffic](./arc/image8.png)
+![forward-traffic](./image/image8.png)
 
 ## Check on Syslog Server
 
-![syslog-check](./arc/image9.png)
-
 Destination shows the Facebook IP address.
+
+![syslog-check](./image/image9.png)
+
