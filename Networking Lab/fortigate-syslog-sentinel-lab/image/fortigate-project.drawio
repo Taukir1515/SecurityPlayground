@@ -1,0 +1,43 @@
+<mxfile host="Electron">
+  <diagram name="Page-1" id="IJRo0G7zNoccgKgq0uWr">
+    <mxGraphModel dx="710" dy="432" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="iavFGujbZtOx7Zxlfyet-8" edge="1" parent="1" source="pqDq-_5Nfb6nwukl1Hl_-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="iavFGujbZtOx7Zxlfyet-7" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pqDq-_5Nfb6nwukl1Hl_-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;div&gt;Ubuntu-server-01&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Host-only ens33&lt;/span&gt;&lt;/div&gt;&lt;div&gt;10.10.10.100/24&lt;/div&gt;&lt;div&gt;&lt;span&gt;Gateway:&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;10.10.10.120/24&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="225" x="297.5" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="pqDq-_5Nfb6nwukl1Hl_-9" edge="1" parent="1" source="pqDq-_5Nfb6nwukl1Hl_-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="pqDq-_5Nfb6nwukl1Hl_-8" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="iavFGujbZtOx7Zxlfyet-13" edge="1" parent="1" source="pqDq-_5Nfb6nwukl1Hl_-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="iavFGujbZtOx7Zxlfyet-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pqDq-_5Nfb6nwukl1Hl_-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;div&gt;Fortigate Firewall&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;port1: &lt;/span&gt;NAT&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;192.168.64.120/24&lt;/span&gt;&lt;/div&gt;&lt;div&gt;Gateway: 192.168.64.2&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="140" x="340" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="pqDq-_5Nfb6nwukl1Hl_-8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;div&gt;Ubuntu-server-02&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;NAT ens33&lt;/span&gt;&lt;/div&gt;&lt;div&gt;192.168.64.110/24&lt;/div&gt;&lt;div&gt;Gateway: 192.168.64.2&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="160" x="580" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="iavFGujbZtOx7Zxlfyet-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Syslog Server" vertex="1">
+          <mxGeometry height="30" width="50" x="580" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="iavFGujbZtOx7Zxlfyet-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Log Generator" vertex="1">
+          <mxGeometry height="30" width="60" x="297.5" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="iavFGujbZtOx7Zxlfyet-5" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" value="INTERNET" vertex="1">
+          <mxGeometry height="60" width="120" x="350" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="iavFGujbZtOx7Zxlfyet-12" edge="1" parent="1" source="iavFGujbZtOx7Zxlfyet-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="pqDq-_5Nfb6nwukl1Hl_-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="iavFGujbZtOx7Zxlfyet-7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;div&gt;Fortigate Firewall&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;port2: Host-only&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;10.10.10.100/24&lt;/div&gt;&lt;div&gt;Gateway: &lt;span style=&quot;background-color: transparent;&quot;&gt;10.10.10.120/24&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="120" x="350" y="140" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
