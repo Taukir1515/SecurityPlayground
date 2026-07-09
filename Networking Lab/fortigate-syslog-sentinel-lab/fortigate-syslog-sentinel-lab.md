@@ -1,4 +1,31 @@
-# Fortigate-Syslog-Sentinel Lab
+
+# Fortigate-Syslog-Sentinel Lab <!-- omit in toc -->
+
+## Table of Content <!-- omit in toc -->
+- [Basic Architecture](#basic-architecture)
+- [Fortigate Firewall](#fortigate-firewall)
+  - [Install Fortigate Firewall](#install-fortigate-firewall)
+  - [Basic Fortigate CLI Commands](#basic-fortigate-cli-commands)
+  - [Add Interfaces in VMware](#add-interfaces-in-vmware)
+  - [Configure Network Interface via GUI (Option-1)](#configure-network-interface-via-gui-option-1)
+  - [Configure Network Interface via Command Line (Option-2)](#configure-network-interface-via-command-line-option-2)
+    - [Port1 (NAT Interface)](#port1-nat-interface)
+    - [Port2 (Host-only Interface)](#port2-host-only-interface)
+    - [Configure Default Route](#configure-default-route)
+  - [Create Cusom Policy](#create-cusom-policy)
+    - [Firewall Policy via GUI](#firewall-policy-via-gui)
+    - [Firewall Policy via CLI](#firewall-policy-via-cli)
+  - [Forward Traffic to Syslog Server](#forward-traffic-to-syslog-server)
+- [Log Generator Server](#log-generator-server)
+  - [Add Interface in VMware](#add-interface-in-vmware)
+  - [Configure Netplan for Static IP](#configure-netplan-for-static-ip)
+- [Syslog Server](#syslog-server)
+  - [Add Interface in VMware](#add-interface-in-vmware-1)
+  - [Configure Netplan for Static IP](#configure-netplan-for-static-ip-1)
+- [Testing](#testing)
+  - [On Log Generator Server](#on-log-generator-server)
+  - [Check on Firewall](#check-on-firewall)
+  - [Check on Syslog Server](#check-on-syslog-server)
 
 # Basic Architecture
 ```
