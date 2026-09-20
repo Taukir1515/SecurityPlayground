@@ -155,7 +155,8 @@ https://downloadcenter.trendmicro.com/index.php?regs=NABU&clk=latest&clkval=5347
 
 ![alt text](./image/35.png)
 
-7. After Restart, Apex One will start automatically.
+7. After Restart, Apex One will start automatically.    
+
 ![alt text](./image/36.png)
 
 ![alt text](./image/37.png)
@@ -202,9 +203,11 @@ If there is a license of Endpoint Sensor, check the box.
 
 ![alt text](./image/55.png)
 
-![alt text](./image/56.png)
+![alt text](./image/56.png)  
 
-Generate Backup Password
+
+Generate Backup Password  
+
 ![alt text](./image/57.png)
 
 Minimum 10 characters with Uppercase, lowercase, number and special characters.
