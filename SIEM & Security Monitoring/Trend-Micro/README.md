@@ -7,13 +7,18 @@
 - [Install SQL Server](#install-sql-server)
 - [Install SQL Server Management Studio (SSMS)](#install-sql-server-management-studio-ssms)
 - [Install Trend Micro](#install-trend-micro)
-- [Patch Installation](#patch-installation)
+  - [Trend Micro Apex One](#trend-micro-apex-one)
+  - [Trend Micro Apex One Patch](#trend-micro-apex-one-patch)
 - [Update Trend Micro Apex One Service Pack](#update-trend-micro-apex-one-service-pack)
 - [Apex One Web Console](#apex-one-web-console)
 - [Download Agent Installer](#download-agent-installer)
+- [Install Agent to Endpoint](#install-agent-to-endpoint)
 - [Install IIS on Windows Server](#install-iis-on-windows-server)
-  - [Solving IIS ASP issue](#solving-iis-asp-issue)
+  - [Troubleshooting IIS ASP Issue (In case required)](#troubleshooting-iis-asp-issue-in-case-required)
 - [Install Trend Micro Apex Central](#install-trend-micro-apex-central)
+- [Connect Apex One and Apex Central](#connect-apex-one-and-apex-central)
+  - [Apex One ==\> Apex Central](#apex-one--apex-central)
+  - [Apex Central ==\> Apex One](#apex-central--apex-one)
 
 
 # Minimum Windows Server Requirement
@@ -30,7 +35,7 @@
 | **Additional Disk Space** | 3.0 GB recommended if Application Control, Endpoint Sensor, Vulnerability Protection, and Data Protection are enabled |
 
 
-**Reference:**
+**Reference**
 ```
 https://docs.trendmicro.com/en-us/documentation/article/apex-one-as-a-service-online-help-windows-server-2025-
 ```
@@ -40,18 +45,18 @@ Recommended Windows Server Version: 2019 / 2022 / 2025
 
 # Install SQL Server
 
-Version used **SQL Server 2019**
+>[!Important]  
+Use SQL Server version CU4 or above, NEVER use SQL server 2019 Evolution version.   
+**Refence:**
+[SQL version selection](https://success.trendmicro.com/en-US/solution/KA-0003711)
 
-> [!NOTE:]   
+Version used **SQL Server 2022 licensed version**
+
+> [!NOTE]   
 Having Trend Micro and SQL Server in the same Windows Server is good practice for small and medium infrastructure.
 
-1.	Download from official page --
-```
-https://www.microsoft.com/en-us/evalcenter/download-sql-server-2019?msockid=06751c6f941b6ba325760b2f957c6a0a
-```
-Download `EXE Download 64-bit edition`
 
-2. Install by following the below steps:
+**Install by following the below steps:**
 
 ![alt text](./image/01.png)
 
@@ -69,38 +74,11 @@ Download `EXE Download 64-bit edition`
 
 ![alt text](./image/08.png)
 
+**Note the System Admin (sa) password:**
+
 ![alt text](./image/09.png)
 
 ![alt text](./image/10.png)
-
-![alt text](./image/11.png)
-
-![alt text](./image/12.png)
-
-![alt text](./image/13.png)
-
-![alt text](./image/14.png)
-
-![alt text](./image/15.png)
-
-![alt text](./image/16.png)
-
-![alt text](./image/17.png)
-
-![alt text](./image/18.png)
-
-Remember the System Admin (sa) password:
-![alt text](./image/19.png)
-
-![alt text](./image/20.png)
-
-![alt text](./image/21.png)
-
-![alt text](./image/22.png)
-
-![alt text](./image/23.png)
-
-
 
 
 # Install SQL Server Management Studio (SSMS) 
@@ -133,9 +111,13 @@ https://learn.microsoft.com/en-us/ssms/install/install
 
 ![alt text](./image/31.png)
 
+Open `SQL Server Management Studio (SSMS)`
+
+![alt text](./image/31a.png)
 
 # Install Trend Micro
 
+## Trend Micro Apex One
 1. Trend Micro Apex One Download Link
 ```
 https://downloadcenter.trendmicro.com/index.php?regs=NABU&clk=latest&clkval=5347&lang_loc=1
@@ -226,7 +208,7 @@ Create Start Menu folder
 
 ![alt text](./image/62.png)
 
-# Patch Installation
+## Trend Micro Apex One Patch 
 
 Run the patch file as Administrator
 
@@ -251,6 +233,11 @@ Run the patch file as Administrator
 
 # Apex One Web Console
 
+Access Link:
+```
+https://Server_IP:4343/officescan/console/html/cgi/cgiChkMasterPwd.exe
+```
+
 Open Apex One Web Console (HTML)
 
 ![alt text](./image/71.png)
@@ -265,7 +252,7 @@ Open Apex One Web Console (HTML)
 ![alt text](./image/75.png)
 
 # Download Agent Installer
-Log out from the session.
+Log out from **Apex One** session.
 
 
 Click on installer. 
@@ -273,6 +260,7 @@ Click on installer.
 
 ![alt text](./image/77.png)
 
+>[!Note]
 This msi installer can be distributed via network share or USB pen drive. Local PC and the server must be on the same network.
 
 ![alt text](./image/78.png)
@@ -282,7 +270,13 @@ This msi installer can be distributed via network share or USB pen drive. Local 
 
 ![alt text](./image/80.png)
 
+# Install Agent to Endpoint
 
+Go to `Agents` >> `Agent Management`  
+
+Check the onboarded Endpoint:
+
+![alt text](./image/80a.png)
 
 # Install IIS on Windows Server
 Go to Server Manager
@@ -307,6 +301,7 @@ Go to Server Manager
 
 ![alt text](./image/90.png)
 
+
 ![alt text](./image/91.png)
 
 ![alt text](./image/92.png)
@@ -316,9 +311,12 @@ Go to Server Manager
 ![alt text](./image/94.png)
 
 
-## Solving IIS ASP issue
+## Troubleshooting IIS ASP Issue (In case required)
 
-In powershell
+**Root Cause:** 
+- `ASP` doesn't check while selecting Roles in `Role Services`
+
+**Fixing via Powershell:**
 
 ```pw1
 Install-WindowsFeature Web-ASP
@@ -349,4 +347,48 @@ Web console URL:
 ```
 https://192.168.64.134/webapp/index.html
 ```
+
+# Connect Apex One and Apex Central
+
+## Apex One ==> Apex Central
+
+1. Login Apex One console
+
+2. Go to Apex Central Settings  
+
+`Administration >> Settings >> Apex Central`
+
+![alt text](./image/95.png)
+
+For `IIS web server authentication`,  
+Username = Apex Central Username
+password = Apex Central Password
+
+
+![alt text](./image/96.png)
+
+
+Test and Upload the connection:  
+
+![alt text](./image/97.png)
+
+## Apex Central ==> Apex One
+
+1. Login Apex Central console  
+
+
+`Directories >> Products`
+
+![alt text](./image/98.png)
+
+![alt text](./image/99.png)
+
+>[!Note]
+By Default, the Apex One server is placed under `New Entity`. But we need to create a `New Folde`r under "`Local Folder`" and move the Apex One server to the `New Folder`
+
+
+
+Check the connection status:
+
+![alt text](./image/100.png)
 
