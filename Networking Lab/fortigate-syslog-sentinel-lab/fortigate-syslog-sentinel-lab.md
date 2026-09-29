@@ -261,5 +261,9 @@ curl facebook.com
 Firewall log forwards to syslog server in CEF format.  
 Destination shows the Facebook IP address.
 
+```bash
+sudo tail -f /var/log/syslog | grep -i fortigate
+```
+**Output:**
 ![syslog-check](./image/image9.png)
 
