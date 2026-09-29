@@ -164,8 +164,7 @@ end
 
 ## Forward Traffic to Syslog Server
 
-> **[!NOTE]**
-> 
+> [!NOTE]
 > First configure a Syslog server and get the Syslog server IP Address.
 
 ```
@@ -177,8 +176,7 @@ set server 192.168.64.110
 end
 ```
 # Log Generator Server
-> **[!NOTE]**
-> 
+> [!NOTE]
 > Server Should be at Host-only Interface
 
 ## Add Interface in VMware
