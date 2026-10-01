@@ -26,6 +26,19 @@
   - [On Log Generator Server](#on-log-generator-server)
   - [Check on Firewall](#check-on-firewall)
   - [Check on Syslog Server](#check-on-syslog-server)
+  - [Architecture So Far:](#architecture-so-far)
+- [Onboard Syslog Server to Azure Arc](#onboard-syslog-server-to-azure-arc)
+  - [Prerequisites](#prerequisites)
+  - [Onboard the Syslog Server to Azure Arc](#onboard-the-syslog-server-to-azure-arc)
+  - [Enable AMA extension](#enable-ama-extension)
+  - [Bonus](#bonus)
+- [Microsoft Sentinel Configuration](#microsoft-sentinel-configuration)
+  - [Add Data Connector](#add-data-connector)
+    - [Create the Data Collection Rule (DCR)](#create-the-data-collection-rule-dcr)
+    - [Install the Fortinet Solution](#install-the-fortinet-solution)
+    - [Install the CEF Collector](#install-the-cef-collector)
+  - [Validate Logs in Microsoft Sentinel](#validate-logs-in-microsoft-sentinel)
+- [Troubleshooting](#troubleshooting)
 
 # Basic Architecture
 ```
@@ -38,6 +51,24 @@ Server-01 ──Syslog traffic──► FortiGate──►Internet
                                                   ▼
                                               Sentinel
 ``` 
+
+```
+FortiGate
+   ↓ CEF / UDP 514
+Ubuntu Syslog Server
+   ↓
+Azure Arc
+   ↓
+AzureMonitorLinuxAgent (AMA) ← Required
+   ↓
+DCR (LOCAL7 / NOTICE)
+   ↓
+Log Analytics Workspace
+   ↓
+CommonSecurityLog
+   ↓
+Microsoft Sentinel
+```
 
 ![Basic Architecture](./image/fortigate-project.png)
 
@@ -267,3 +298,252 @@ sudo tail -f /var/log/syslog | grep -i fortigate
 **Output:**
 ![syslog-check](./image/image9.png)
 
+
+
+## Architecture So Far:
+```
+Log Generator 
+    |
+    ▼
+FortiGate 
+    |
+    ▼
+Syslog Server
+```
+
+
+# Onboard Syslog Server to Azure Arc
+
+## Prerequisites
+- An Azure subscription
+- A resource group
+- A Log Analytics workspace
+- Microsoft Sentinel enabled on the workspace
+- Outbound HTTPS connectivity from the Ubuntu server to Azure
+- Sufficient Azure permissions to onboard the server and configure the connector
+
+## Onboard the Syslog Server to Azure Arc
+1. In the Azure portal, open **Azure Arc > Machines**.
+
+![alt text](./image/10.png)
+
+
+1. Add the machine by following the steps.
+
+![alt text](./image/11.png)
+
+![alt text](./image/12.png)
+
+![alt text](./image/13.png)
+
+3. Run the generated script on the `Ubuntu Syslog server` with `sudo`.
+4. Return to **Azure Arc > Machines** and confirm that the machine status is **Connected**.
+
+![alt text](./image/14.png)
+
+
+## Enable AMA extension
+1. Open Onboarded Linux machine
+2. Open **Settings** >> **Extensions**
+
+![alt text](./image/15.png)
+
+3. Enable **Azure Monitor Agent for Linux**
+
+![alt text](./image/16.png)
+
+
+
+## Bonus
+
+**To Off-board machine from Azure Arc**
+
+Verify the current connection: 
+```
+azcmagent show
+```
+Off-board from Azure Arc:
+```
+azcmagent disconnect
+```
+
+# Microsoft Sentinel Configuration
+
+## Add Data Connector
+1. Open **Data Connectors**  
+   Add:
+   - Common Event Format (CEF) via AMA
+
+![alt text](./image/17.png)
+
+### Create the Data Collection Rule (DCR)
+
+1. On the connector page, select **Create data collection rule**.
+
+![alt text](./image/18.png)
+
+2. Click on **Create data collection rule**
+
+![alt text](./image/19.png)
+
+
+3. Enter a name for the DCR.
+4. Select the Azure subscription and resource group.
+5. Under **Resources**, add the Azure Arc-enabled Ubuntu Syslog server.
+
+![alt text](./image/20.png)
+
+
+6. Under **Collect** tab, for **LOG_LOCAL7** facility, select **LOG_NOTICE** to get FortiGate events.
+
+![alt text](./image/21.png)
+
+7. Create the DCR.
+
+### Install the Fortinet Solution
+
+1. Open Microsoft Sentinel for the target Log Analytics workspace.
+2. Open **Content hub**.
+3. Search for **Fortinet FortiGate Next-Generation Firewall**.
+4. Install the solution.
+
+![alt text](./image/22.png)
+
+
+
+### Install the CEF Collector
+
+The connector page generates the current CEF collector installation command for the selected Linux forwarder.
+
+1. Copy the command displayed under `Create data collection rule`.
+2. Run the generated command on the **Ubuntu Syslog server** with `sudo`.
+
+![alt text](./image/23.png)
+
+Check the AMA service:
+
+```bash
+sudo systemctl status azuremonitoragent --no-pager
+```
+
+Check the agent log for recent errors:
+
+```bash
+sudo tail -n 100 /var/opt/microsoft/azuremonitoragent/log/mdsd.err
+```
+
+
+## Validate Logs in Microsoft Sentinel
+
+Generate new traffic from the log-generator server after AMA and the DCR are configured:
+
+```bash
+ping 1.1.1.1
+curl google.com
+```
+
+Open **Logs** in Microsoft Sentinel or the connected Log Analytics workspace and run:
+
+```sql
+CommonSecurityLog
+| where TimeGenerated > ago(30m)
+| where DeviceVendor =~ "Fortinet"
+| order by TimeGenerated desc
+```
+
+
+
+
+
+
+
+# Troubleshooting
+
+1. Check the actual Syslog PRI/facility
+
+Run on syslogserver:
+```
+sudo tcpdump -i any port 514 -A -vv
+```
+
+Then generate traffic again from Ubuntu-server-01:
+
+```
+curl google.com
+```
+
+Expected Output (if local7 is selected as Facility in DCR):
+
+```
+Facility local7 (23), Severity notice (5)
+```
+
+and the actual packet starts with:
+
+```
+<189>Sep 30 17:13:18 Fortigate CEF:0|Fortinet|Fortigate|...
+```
+
+
+Current Steps:
+
+```
+Ubuntu generator
+      ↓
+FortiGate
+      ✅
+      ↓ UDP 514 / CEF
+Syslog server
+      ✅
+      ↓
+RSyslog
+      ✅ receives LOCAL7.NOTICE
+      ↓
+DCR: LOCAL7 / NOTICE
+      ✅ correct
+      ↓
+AMA
+      ❓
+      ↓
+CommonSecurityLog
+      ❌
+```
+
+
+The problem is now between RSyslog → AMA → DCR/workspace.
+
+
+2. On syslogserver, run these:
+
+On syslogserver, run these:
+```
+sudo cat /etc/rsyslog.d/10-azuremonitoragent-omfwd.conf
+
+sudo rsyslogd -N1
+```
+
+3. Restart AMA and rsyslog
+
+Run on syslogserver after the DCR deployment completes:
+
+```bash
+sudo systemctl restart azuremonitoragent
+sudo systemctl restart rsyslog
+sudo systemctl status azuremonitoragent --no-pager
+sudo systemctl status rsyslog --no-pager
+```
+
+Verify that the DCR reached the server
+
+```bash
+sudo grep -i -r "SECURITY_CEF_BLOB" /etc/opt/microsoft/azuremonitoragent/config-cache/configchunks
+```
+
+4. In Sentinel, run:
+
+```sql
+Heartbeat
+| where TimeGenerated > ago(1h)
+| where Computer =~ "syslogserver"
+| order by TimeGenerated desc
+```
