@@ -1,0 +1,1412 @@
+{
+  "version": "Notebook/1.0",
+  "name": "Unsaved Dashboard",
+  "items": [
+    {
+      "type": 9,
+      "name": "parameters - 0",
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "label": "Time Range",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 604800000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2592000000
+                }
+              ],
+              "allowCustom": false
+            },
+            "id": "07616034-006a-423e-9586-2df50c9f3e30",
+            "key": "07616034-006a-423e-9586-2df50c9f3e30"
+          }
+        ]
+      },
+      "styleSettings": {
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 0,
+        "showBorder": false,
+        "borderStyle": "light thick"
+      }
+    },
+    {
+      "type": 3,
+      "name": "Total Connected Data Sources",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Total Connectors",
+        "query": "// Total Connectors\nprint ConfiguredConnectors=17",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "colorSettings": {
+            "mode": "background",
+            "staticColor": "blue",
+            "type": "static"
+          },
+          "tagTextPosition": "bottom"
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 4,
+        "h": 4,
+        "x": 0,
+        "y": 16
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 6",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Data Connectors",
+        "query": "// Data Connector Status Distribution\nlet ConnectorHealth =\nunion\n(\nAzureActivity\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Azure Activity\"\n),\n(\nUsage\n| where DataType == \"CloudflareV2_CL\"\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Cloudflare (Using Blob Container)\"\n),\n(\nCommonSecurityLog\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Common Event Format (CEF) via AMA\"\n),\n(\nUsage\n| where DataType == \"GoogleWorkspaceReports\"\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Google Workspace Activities\"\n),\n(\nOfficeActivity\n| where OfficeWorkload in (\"SharePoint\",\"OneDrive\",\"Exchange\",\"MicrosoftTeams\")\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft 365\"\n),\n(\nSecurityAlert\n| where ProductName == \"Microsoft 365 Insider Risk Management\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft 365 Insider Risk Management\"\n),\n(\nSecurityAlert\n| where ProductName == \"Microsoft Cloud App Security\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Defender for Cloud Apps\"\n),\n(\nSecurityAlert\n| where ProviderName == \"MDATP\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Defender for Endpoint\"\n),\n(\nSecurityAlert\n| where ProductName == \"Azure Advanced Threat Protection\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Defender for Identity\"\n),\n(\nSecurityAlert\n| where ProviderName == \"OATP\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Defender for Office 365\"\n),\n(\nunion\n(\nSecurityIncident\n| where ProviderName in (\"Microsoft 365 Defender\",\"Microsoft XDR\")\n| project TimeGenerated\n),\n(\nSecurityAlert\n| extend OriginalProductName=tostring(todynamic(ExtendedProperties).OriginalProductName)\n| where (isempty(OriginalProductName) and ProductName in (\"Microsoft Defender Advanced Threat Protection\",\"Office 365 Advanced Threat Protection\",\"Azure Advanced Threat Protection\",\"Microsoft Cloud App Security\",\"Microsoft 365 Defender\",\"Microsoft Defender XDR\",\"Microsoft Threat Intelligence\"))\nor (ProductName in (\"Microsoft 365 Defender\",\"Microsoft Defender XDR\")\nand OriginalProductName in (\"Microsoft Defender Advanced Threat Protection\",\"Office 365 Advanced Threat Protection\",\"Azure Advanced Threat Protection\",\"Microsoft Cloud App Security\",\"Microsoft 365 Defender\",\"Microsoft Defender XDR\",\"Microsoft Threat Intelligence\"))\n| project TimeGenerated\n)\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Defender XDR\"\n),\n(\nunion\n(\nSigninLogs\n| project TimeGenerated\n),\n(\nAADManagedIdentitySignInLogs\n| project TimeGenerated\n),\n(\nMicrosoftGraphActivityLogs\n| project TimeGenerated\n)\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Entra ID\"\n),\n(\nSecurityAlert\n| where ProductName == \"Azure Active Directory Identity Protection\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Entra ID Protection\"\n),\n(\nThreatIntelIndicators\n| where SourceSystem in (\"Microsoft Defender Threat Intelligence\",\"Microsoft Emerging Threat Feed\")\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Threat Intelligence\"\n),\n(\nSyslog\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Syslog via AMA\"\n),\n(\nSecurityAlert\n| where ProductName == \"Azure Security Center\"\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Tenant-based Microsoft Defender for Cloud\"\n),\n(\nSecurityEvent\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Windows Security Events via AMA\"\n);\nConnectorHealth\n| extend MinutesSinceLastLog = datetime_diff(\"minute\", now(), LastSeen)\n| extend Status = iff(\n    isnull(LastSeen),\n    \"Unhealthy\",\n    \"Healthy\"\n)\n| summarize Count=count() by Status\n| extend Percentage=round((Count * 100.0) / 17, 2)\n| extend StatusOrder = iff(Status == \"Unhealthy\", 1, 2)\n| order by StatusOrder asc\n| project Status, Percentage",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "categoricalbar",
+        "chartSettings": {
+          "legendSettings": {
+            "position": "bottom"
+          },
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Healthy",
+              "color": "greenDarkDark"
+            },
+            {
+              "seriesName": "Unhealthy",
+              "color": "red"
+            }
+          ]
+        },
+        "aggregation": 5,
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 5,
+        "h": 8,
+        "x": 4,
+        "y": 16
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 6",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Data Connectors",
+        "query": "// Data Connector Status Distribution\nlet ConnectorHealth =\nunion\n(\nAzureActivity\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Azure Activity\"\n),\n(\nUsage\n| where DataType == \"CloudflareV2_CL\"\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Cloudflare (Using Blob Container)\"\n),\n(\nCommonSecurityLog\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Common Event Format (CEF) via AMA\"\n),\n(\nUsage\n| where DataType == \"GoogleWorkspaceReports\"\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Google Workspace Activities\"\n),\n(\nOfficeActivity\n| where OfficeWorkload in (\"SharePoint\",\"OneDrive\",\"Exchange\",\"MicrosoftTeams\")\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft 365\"\n),\n(\nSecurityAlert\n| where ProductName == \"Microsoft 365 Insider Risk Management\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft 365 Insider Risk Management\"\n),\n(\nSecurityAlert\n| where ProductName == \"Microsoft Cloud App Security\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Defender for Cloud Apps\"\n),\n(\nSecurityAlert\n| where ProviderName == \"MDATP\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Defender for Endpoint\"\n),\n(\nSecurityAlert\n| where ProductName == \"Azure Advanced Threat Protection\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Defender for Identity\"\n),\n(\nSecurityAlert\n| where ProviderName == \"OATP\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Defender for Office 365\"\n),\n(\nunion\n(\nSecurityIncident\n| where ProviderName in (\"Microsoft 365 Defender\",\"Microsoft XDR\")\n| project TimeGenerated\n),\n(\nSecurityAlert\n| extend OriginalProductName=tostring(todynamic(ExtendedProperties).OriginalProductName)\n| where (isempty(OriginalProductName) and ProductName in (\"Microsoft Defender Advanced Threat Protection\",\"Office 365 Advanced Threat Protection\",\"Azure Advanced Threat Protection\",\"Microsoft Cloud App Security\",\"Microsoft 365 Defender\",\"Microsoft Defender XDR\",\"Microsoft Threat Intelligence\"))\nor (ProductName in (\"Microsoft 365 Defender\",\"Microsoft Defender XDR\")\nand OriginalProductName in (\"Microsoft Defender Advanced Threat Protection\",\"Office 365 Advanced Threat Protection\",\"Azure Advanced Threat Protection\",\"Microsoft Cloud App Security\",\"Microsoft 365 Defender\",\"Microsoft Defender XDR\",\"Microsoft Threat Intelligence\"))\n| project TimeGenerated\n)\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Defender XDR\"\n),\n(\nunion\n(\nSigninLogs\n| project TimeGenerated\n),\n(\nAADManagedIdentitySignInLogs\n| project TimeGenerated\n),\n(\nMicrosoftGraphActivityLogs\n| project TimeGenerated\n)\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Entra ID\"\n),\n(\nSecurityAlert\n| where ProductName == \"Azure Active Directory Identity Protection\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Entra ID Protection\"\n),\n(\nThreatIntelIndicators\n| where SourceSystem in (\"Microsoft Defender Threat Intelligence\",\"Microsoft Emerging Threat Feed\")\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Threat Intelligence\"\n),\n(\nSyslog\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Syslog via AMA\"\n),\n(\nSecurityAlert\n| where ProductName == \"Azure Security Center\"\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Tenant-based Microsoft Defender for Cloud\"\n),\n(\nSecurityEvent\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Windows Security Events via AMA\"\n);\nConnectorHealth\n| extend MinutesSinceLastLog = datetime_diff(\"minute\", now(), LastSeen)\n| extend Status = iff(\n    isnull(LastSeen),\n    \"Unhealthy\",\n    \"Healthy\"\n)\n| summarize Count=count() by Status\n| extend Percentage=round((Count * 100.0) / 17, 2)\n| extend StatusOrder = iff(Status == \"Unhealthy\", 1, 2)\n| order by StatusOrder asc\n| project Status, Percentage",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "piechart",
+        "chartSettings": {
+          "legendSettings": {
+            "position": "right"
+          },
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Healthy",
+              "color": "blueDark"
+            },
+            {
+              "seriesName": "Unhealthy",
+              "color": "yellow"
+            }
+          ]
+        },
+        "aggregation": 5,
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 10,
+        "x": 0,
+        "y": 4
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 7",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Connector Health Details",
+        "query": "// Connector Health Details\nlet ConnectorHealth =\nunion\n(\nAzureActivity\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Azure Activity\"\n),\n(\nUsage\n| where DataType == \"CloudflareV2_CL\"\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Cloudflare (Using Blob Container)\"\n),\n(\nCommonSecurityLog\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Common Event Format (CEF) via AMA\"\n),\n(\nUsage\n| where DataType == \"GoogleWorkspaceReports\"\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Google Workspace Activities\"\n),\n(\nOfficeActivity\n| where OfficeWorkload in (\"SharePoint\",\"OneDrive\",\"Exchange\",\"MicrosoftTeams\")\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft 365\"\n),\n(\nSecurityAlert\n| where ProductName == \"Microsoft 365 Insider Risk Management\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft 365 Insider Risk Management\"\n),\n(\nunion\n(\nSecurityAlert\n| where ProductName == \"Microsoft Cloud App Security\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| project TimeGenerated\n),\n(\nUsage\n| where DataType == \"McasShadowItReporting\"\n| project TimeGenerated\n)\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Defender for Cloud Apps\"\n),\n(\nSecurityAlert\n| where ProviderName == \"MDATP\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Defender for Endpoint\"\n),\n(\nSecurityAlert\n| where ProductName == \"Azure Advanced Threat Protection\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Defender for Identity\"\n),\n(\nSecurityAlert\n| where ProviderName == \"OATP\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Defender for Office 365\"\n),\n(\nunion\n(\nSecurityIncident\n| where ProviderName in (\"Microsoft 365 Defender\",\"Microsoft XDR\")\n| project TimeGenerated\n),\n(\nSecurityAlert\n| extend OriginalProductName=tostring(todynamic(ExtendedProperties).OriginalProductName)\n| where (isempty(OriginalProductName) and ProductName in (\"Microsoft Defender Advanced Threat Protection\",\"Office 365 Advanced Threat Protection\",\"Azure Advanced Threat Protection\",\"Microsoft Cloud App Security\",\"Microsoft 365 Defender\",\"Microsoft Defender XDR\",\"Microsoft Threat Intelligence\"))\nor (ProductName in (\"Microsoft 365 Defender\",\"Microsoft Defender XDR\")\nand OriginalProductName in (\"Microsoft Defender Advanced Threat Protection\",\"Office 365 Advanced Threat Protection\",\"Azure Advanced Threat Protection\",\"Microsoft Cloud App Security\",\"Microsoft 365 Defender\",\"Microsoft Defender XDR\",\"Microsoft Threat Intelligence\"))\n| project TimeGenerated\n),\n(\nSecurityAlert\n| where ProductName in (\"Microsoft 365 Defender\",\"Microsoft Defender XDR\")\n| project TimeGenerated\n)\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Defender XDR\"\n),\n(\nunion\n(\nSigninLogs\n| project TimeGenerated\n),\n(\nAADManagedIdentitySignInLogs\n| project TimeGenerated\n),\n(\nMicrosoftGraphActivityLogs\n| project TimeGenerated\n)\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Entra ID\"\n),\n(\nSecurityAlert\n| where ProductName == \"Azure Active Directory Identity Protection\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Entra ID Protection\"\n),\n(\nunion\n(\nThreatIntelIndicators\n| where SourceSystem in (\"Microsoft Defender Threat Intelligence\",\"Microsoft Emerging Threat Feed\")\n| project TimeGenerated\n),\n(\nUsage\n| where DataType == \"ThreatIntelObjects\"\n| project TimeGenerated\n)\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Microsoft Threat Intelligence\"\n),\n(\nSyslog\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Syslog via AMA\"\n),\n(\nSecurityAlert\n| where ProductName == \"Azure Security Center\"\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Tenant-based Microsoft Defender for Cloud\"\n),\n(\nSecurityEvent\n| summarize LastSeen=max(TimeGenerated)\n| extend Connector=\"Windows Security Events via AMA\"\n);\n\nConnectorHealth\n| extend MinutesSinceLastLog = datetime_diff(\"minute\", now(), LastSeen)\n| extend Status = iff(\n    isnull(LastSeen),\n    \"Unhealthy\",\n    \"Healthy\"\n)\n| extend StatusOrder = iff(Status == \"Unhealthy\", 1, 2)\n| extend SortMinutes = coalesce(MinutesSinceLastLog, 999999999)\n| order by StatusOrder asc, SortMinutes desc, Connector asc\n| project\n    Connector,\n    LastSeen,\n    HeartbeatAgeMin=MinutesSinceLastLog,\n    Status",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Status",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "operator": "==",
+                    "sourceColumn": "Status",
+                    "thresholdValue": "Healthy",
+                    "representation": "greenDarkDark"
+                  },
+                  {
+                    "operator": "==",
+                    "sourceColumn": "Status",
+                    "thresholdValue": "Unhealthy",
+                    "representation": "red"
+                  },
+                  {
+                    "operator": "Default",
+                    "representation": "lightBlue"
+                  }
+                ],
+                "customColumnWidthSetting": "135px"
+              }
+            },
+            {
+              "columnMatch": "HeartbeatAgeMin",
+              "formatter": 1
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "230px"
+              },
+              "columnMatch": "Connector",
+              "formatter": 0
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "170px"
+              },
+              "columnMatch": "LastSeen",
+              "formatter": 0
+            }
+          ]
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 10,
+        "h": 8,
+        "x": 14,
+        "y": 16
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 8",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Healthy Connectors",
+        "query": "union\n(\nAzureActivity | summarize LastSeen=max(TimeGenerated)\n),\n(\nCommonSecurityLog | summarize LastSeen=max(TimeGenerated)\n),\n(\nOfficeActivity\n| where OfficeWorkload in (\"SharePoint\",\"OneDrive\",\"Exchange\",\"MicrosoftTeams\")\n| summarize LastSeen=max(TimeGenerated)\n),\n(\nSecurityAlert\n| where ProductName == \"Microsoft 365 Insider Risk Management\"\n| summarize LastSeen=max(TimeGenerated)\n),\n(\nSecurityAlert\n| where ProductName == \"Microsoft Cloud App Security\"\n| summarize LastSeen=max(TimeGenerated)\n),\n(\nSecurityAlert\n| where ProviderName == \"MDATP\"\n| summarize LastSeen=max(TimeGenerated)\n),\n(\nSecurityAlert\n| where ProductName == \"Azure Advanced Threat Protection\"\n| summarize LastSeen=max(TimeGenerated)\n),\n(\nSecurityAlert\n| where ProviderName == \"OATP\"\n| summarize LastSeen=max(TimeGenerated)\n),\n(\nSecurityIncident\n| where ProviderName in (\"Microsoft 365 Defender\",\"Microsoft XDR\")\n| summarize LastSeen=max(TimeGenerated)\n),\n(\nSigninLogs\n| summarize LastSeen=max(TimeGenerated)\n),\n(\nSecurityAlert\n| where ProductName == \"Azure Active Directory Identity Protection\"\n| summarize LastSeen=max(TimeGenerated)\n),\n(\nThreatIntelIndicators\n| summarize LastSeen=max(TimeGenerated)\n),\n(\nSyslog\n| summarize LastSeen=max(TimeGenerated)\n),\n(\nSecurityAlert\n| where ProductName == \"Azure Security Center\"\n| summarize LastSeen=max(TimeGenerated)\n),\n(\nSecurityEvent\n| summarize LastSeen=max(TimeGenerated)\n)\n| extend MinutesSinceLastLog = datetime_diff(\"minute\", now(), LastSeen)\n| extend Status = iff(\n    isnull(LastSeen), \"Unhealthy\",\n    \"Healthy\"\n)\n| summarize HealthyConnectors=countif(Status == \"Healthy\")\n//| extend ConnectorHealthScorePercent=round((HealthyConnectors * 100.0) / 17, 2)\n//| project ConnectorHealthScorePercent",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "colorSettings": {
+            "mode": "background",
+            "type": "heatmap",
+            "staticColor": "orangeDark",
+            "heatmapMin": 0,
+            "heatmapMax": 17,
+            "heatmapPalette": "redGreen"
+          },
+          "tagTextPosition": "bottom"
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 4,
+        "h": 4,
+        "x": 0,
+        "y": 20
+      }
+    },
+    {
+      "type": 1,
+      "name": "text - 6",
+      "content": {
+        "json": "# Data Connector",
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "resourceIds": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 14
+      }
+    },
+    {
+      "type": 1,
+      "name": "text - 6",
+      "content": {
+        "json": "# Azure Arc Machine Statistics",
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "resourceIds": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 34
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 8",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Total Arc Machines",
+        "query": "// Total Azure Arc Machines\nHeartbeat\n| where ResourceProvider == \"Microsoft.HybridCompute\"\n| summarize TotalArcMachines=dcount(Computer)",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "colorSettings": {
+            "mode": "background",
+            "type": "static",
+            "staticColor": "blue"
+          },
+          "tagTextPosition": "bottom"
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 5,
+        "x": 0,
+        "y": 36
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 9",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Healthy Arc Machines",
+        "query": "//Healthy Azure Arc Machines\nHeartbeat\n| where ResourceProvider == \"Microsoft.HybridCompute\"\n| summarize LastSeen=max(TimeGenerated) by Computer\n| summarize HealthyArcMachines=countif(LastSeen > ago(1h))",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "colorSettings": {
+            "mode": "background",
+            "type": "static",
+            "staticColor": "greenDarkDark"
+          },
+          "tagTextPosition": "bottom"
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 3,
+        "h": 6,
+        "x": 0,
+        "y": 41
+      },
+      "showPin": false
+    },
+    {
+      "type": 3,
+      "name": "logs query - 9",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Stale Arc Machines",
+        "query": "//Stale Azure Arc Machines\nHeartbeat\n| where ResourceProvider == \"Microsoft.HybridCompute\"\n| summarize LastSeen=max(TimeGenerated) by Computer\n| summarize StaleArcMachines=countif(LastSeen < ago(1h))",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "colorSettings": {
+            "mode": "background",
+            "type": "heatmap",
+            "thresholdsGrid": [
+              {
+                "operator": "Default",
+                "representation": "none"
+              }
+            ],
+            "heatmapMin": 0,
+            "heatmapMax": 24,
+            "heatmapPalette": "orangeRed"
+          },
+          "tagTextPosition": "bottom"
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 3,
+        "h": 6,
+        "x": 3,
+        "y": 41
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 10",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Azure Arc Coverage %",
+        "query": "// Azure Arc Coverage %\nHeartbeat\n| where ResourceProvider == \"Microsoft.HybridCompute\"\n| summarize LastSeen=max(TimeGenerated) by Computer\n| extend Status=iff(LastSeen > ago(1h), \"Healthy\", \"Unhealthy\")\n| summarize Count=count() by Status\n| extend Percentage=round(100.0 * Count / toscalar(\n    Heartbeat\n    | where ResourceProvider == \"Microsoft.HybridCompute\"\n    | summarize dcount(Computer)\n), 2)",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "categoricalbar",
+        "chartSettings": {
+          "yAxis": [
+            "Percentage"
+          ],
+          "legendSettings": {
+            "position": "bottom"
+          },
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Healthy",
+              "color": "blueDark"
+            },
+            {
+              "seriesName": "Unhealthy",
+              "color": "red"
+            }
+          ]
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 4,
+        "h": 11,
+        "x": 6,
+        "y": 36
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 10",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Azure Arc Coverage %",
+        "query": "// Azure Arc Coverage %\nHeartbeat\n| where ResourceProvider == \"Microsoft.HybridCompute\"\n| summarize LastSeen=max(TimeGenerated) by Computer\n| extend Status=iff(LastSeen > ago(1h), \"Healthy\", \"Unhealthy\")\n| summarize Count=count() by Status\n| extend Percentage=round(100.0 * Count / toscalar(\n    Heartbeat\n    | where ResourceProvider == \"Microsoft.HybridCompute\"\n    | summarize dcount(Computer)\n), 2)",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "piechart",
+        "chartSettings": {
+          "yAxis": [
+            "Percentage"
+          ],
+          "legendSettings": {
+            "position": "right"
+          },
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Healthy",
+              "color": "amethyst"
+            },
+            {
+              "seriesName": "Unhealthy",
+              "color": "red"
+            }
+          ]
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 10,
+        "x": 6,
+        "y": 4
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 11",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Azure Arc Health Details",
+        "query": "// Azure Arc Health Details\nHeartbeat\n| where ResourceProvider == \"Microsoft.HybridCompute\"\n| summarize\n    LastSeen=max(TimeGenerated),\n    OSName=any(OSName)\nby Computer\n| extend MinutesSinceLastHeartbeat=datetime_diff(\"minute\", now(), LastSeen)\n| extend Status=case(\n    MinutesSinceLastHeartbeat <= 60, \"Healthy\",\n    \"Stale\"\n)\n| project\n    Server=Computer,\n    OSName,\n    LastSeen,\n    Heartbeat_Age_Min= MinutesSinceLastHeartbeat,\n    Status\n| order by Heartbeat_Age_Min desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Status",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "operator": "==",
+                    "sourceColumn": "Status",
+                    "thresholdValue": "Healthy",
+                    "representation": "greenDarkDark"
+                  },
+                  {
+                    "operator": "==",
+                    "sourceColumn": "Status",
+                    "thresholdValue": "Stale",
+                    "representation": "yellow"
+                  },
+                  {
+                    "operator": "Default",
+                    "representation": "lightBlue"
+                  }
+                ],
+                "customColumnWidthSetting": "135px"
+              }
+            },
+            {
+              "columnMatch": "MinutesSinceLastHeartbeat",
+              "formatter": 8,
+              "formatOptions": {
+                "min": 0,
+                "max": 60,
+                "palette": "greenRed",
+                "customColumnWidthSetting": "160px"
+              }
+            },
+            {
+              "columnMatch": "Server",
+              "formatter": 0
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "260px"
+              },
+              "columnMatch": "OSName",
+              "formatter": 0
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "160px"
+              },
+              "columnMatch": "LastSeen",
+              "formatter": 0
+            },
+            {
+              "columnMatch": "Heartbeat_Age_Min",
+              "formatter": 8,
+              "formatOptions": {
+                "palette": "greenRed",
+                "min": 0,
+                "max": 60,
+                "customColumnWidthSetting": "160px"
+              }
+            }
+          ]
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 14,
+        "h": 11,
+        "x": 10,
+        "y": 36
+      }
+    },
+    {
+      "type": 1,
+      "name": "text - 12",
+      "content": {
+        "json": "# Azure Monitor Agent (AMA)",
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "resourceIds": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 47
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 13",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Total AMA Agents",
+        "query": "// Total AMA Agents\nHeartbeat\n| where Category == \"Azure Monitor Agent\"\n| summarize TotalAMAAgents=dcount(Computer)",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "colorSettings": {
+            "mode": "background",
+            "type": "static",
+            "staticColor": "blue"
+          },
+          "tagTextPosition": "bottom"
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 4,
+        "h": 4,
+        "x": 0,
+        "y": 49
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 14",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Healthy Agents",
+        "query": "// Healthy AMA Agents\nHeartbeat\n| where Category == \"Azure Monitor Agent\"\n| summarize LastSeen=max(TimeGenerated) by Computer\n| summarize HealthyAMAAgents=countif(LastSeen > ago(1h))",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "colorSettings": {
+            "mode": "background",
+            "type": "static",
+            "staticColor": "greenDarkDark"
+          },
+          "tagTextPosition": "bottom"
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 4,
+        "h": 4,
+        "x": 0,
+        "y": 53
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 14",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Stale Agents",
+        "query": "// Stale AMA Agents\nHeartbeat\n| where Category == \"Azure Monitor Agent\"\n| summarize LastSeen=max(TimeGenerated) by Computer\n| summarize StaleAMAAgents=countif(LastSeen < ago(1h))",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "colorSettings": {
+            "mode": "background",
+            "type": "heatmap",
+            "heatmapPalette": "orangeRed"
+          },
+          "tagTextPosition": "bottom"
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 4,
+        "h": 3,
+        "x": 0,
+        "y": 57
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 15",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "AMA Coverage %",
+        "query": "// AMA Coverage %\nHeartbeat\n| where Category == \"Azure Monitor Agent\"\n| summarize LastSeen=max(TimeGenerated) by Computer\n| extend Status=iff(LastSeen > ago(1h), \"Healthy\", \"Stale\")\n| summarize Count=count() by Status\n| extend Percentage=round(\n    Count * 100.0 /\n    toscalar(\n        Heartbeat\n        | where Category == \"Azure Monitor Agent\"\n        | summarize dcount(Computer)\n    ),\n    2\n)",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "categoricalbar",
+        "chartSettings": {
+          "yAxis": [
+            "Percentage"
+          ],
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Healthy",
+              "color": "blue"
+            },
+            {
+              "seriesName": "Stale",
+              "color": "orange"
+            }
+          ]
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 4,
+        "h": 11,
+        "x": 4,
+        "y": 49
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 15",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "AMA Coverage %",
+        "query": "// AMA Coverage %\nHeartbeat\n| where Category == \"Azure Monitor Agent\"\n| summarize LastSeen=max(TimeGenerated) by Computer\n| extend Status=iff(LastSeen > ago(1h), \"Healthy\", \"Stale\")\n| summarize Count=count() by Status\n| extend Percentage=round(\n    Count * 100.0 /\n    toscalar(\n        Heartbeat\n        | where Category == \"Azure Monitor Agent\"\n        | summarize dcount(Computer)\n    ),\n    2\n)",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "piechart",
+        "chartSettings": {
+          "yAxis": [
+            "Percentage"
+          ],
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Healthy",
+              "color": "blue"
+            },
+            {
+              "seriesName": "Stale",
+              "color": "orange"
+            }
+          ],
+          "legendSettings": {
+            "position": "right"
+          }
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 10,
+        "x": 12,
+        "y": 4
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 16",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "AMA Health Details",
+        "query": "// AMA Health Details\nHeartbeat\n| where Category == \"Azure Monitor Agent\"\n| summarize\n    LastSeen=max(TimeGenerated),\n    OSName=any(OSName),\n    OSMajorVersion=any(OSMajorVersion),\n    AMAVersion=any(Version)\nby Computer\n| extend MinutesSinceLastHeartbeat=datetime_diff(\"minute\", now(), LastSeen)\n| extend Status=iff(LastSeen > ago(1h), \"Healthy\", \"Stale\")\n| project\n    Computer,\n    OSName,\n    OSMajorVersion,\n    AMAVersion,\n    LastSeen,\n    Heartbeat_Age_Min=MinutesSinceLastHeartbeat,\n    Status\n| order by Heartbeat_Age_Min desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "150px"
+              },
+              "columnMatch": "Computer",
+              "formatter": 0
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "230px"
+              },
+              "columnMatch": "OSName",
+              "formatter": 0
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "100px"
+              },
+              "columnMatch": "OSMajorVersion",
+              "formatter": 0
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "80px"
+              },
+              "columnMatch": "AMAVersion",
+              "formatter": 0
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "160px"
+              },
+              "columnMatch": "LastSeen",
+              "formatter": 0
+            },
+            {
+              "columnMatch": "Heartbeat_Age_Min",
+              "formatter": 8,
+              "formatOptions": {
+                "palette": "greenRed",
+                "max": 60,
+                "customColumnWidthSetting": "150px"
+              }
+            },
+            {
+              "columnMatch": "Status",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "operator": "==",
+                    "sourceColumn": "Status",
+                    "thresholdValue": "Healthy",
+                    "representation": "greenDarkDark"
+                  },
+                  {
+                    "operator": "==",
+                    "sourceColumn": "Status",
+                    "thresholdValue": "Stale",
+                    "representation": "yellow"
+                  },
+                  {
+                    "operator": "Default",
+                    "representation": "lightBlue"
+                  }
+                ],
+                "customColumnWidthSetting": "110px"
+              }
+            }
+          ]
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 16,
+        "h": 11,
+        "x": 8,
+        "y": 49
+      }
+    },
+    {
+      "type": 1,
+      "name": "text - 17",
+      "content": {
+        "json": "# Microsoft Defender for Endpoint (MDE)",
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "resourceIds": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "title": ""
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 60
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 18",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Connector Activity Trend",
+        "query": "// Connector Activity Trend\nunion isfuzzy=true\n(\nAzureActivity\n| extend Connector=\"Azure Activity\"\n),\n(\nCommonSecurityLog\n| extend Connector=\"CEF via AMA\"\n),\n(\nOfficeActivity\n| extend Connector=\"Microsoft 365\"\n),\n(\nSigninLogs\n| extend Connector=\"Microsoft Entra ID\"\n),\n(\nSyslog\n| extend Connector=\"Syslog via AMA\"\n),\n(\nSecurityEvent\n| extend Connector=\"Windows Security Events via AMA\"\n),\n(\nThreatIntelIndicators\n| extend Connector=\"Microsoft Threat Intelligence\"\n)\n| summarize Events=count() by Connector, bin(TimeGenerated, 1d)",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "categoricalbar",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Syslog via AMA",
+              "color": "blueDark"
+            },
+            {
+              "seriesName": "Windows Security Events via AMA",
+              "color": "magenta"
+            },
+            {
+              "seriesName": "Microsoft 365",
+              "color": "greenDark"
+            },
+            {
+              "seriesName": "CEF via AMA",
+              "color": "blue"
+            },
+            {
+              "seriesName": "Microsoft Threat Intelligence",
+              "color": "orange"
+            },
+            {
+              "seriesName": "Microsoft Entra ID",
+              "color": "purple"
+            },
+            {
+              "seriesName": "Azure Activity",
+              "color": "turquoise"
+            }
+          ]
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 10,
+        "x": 0,
+        "y": 24
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 21",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Total MDE Agents",
+        "query": "// Total MDE Agents\nDeviceInfo\n| where OnboardingStatus == \"Onboarded\"\n| summarize arg_max(TimeGenerated, *) by DeviceId\n| summarize TotalMDEAgents=count()",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "valueField": "TotalMDEAgents",
+          "tagTextPosition": "bottom",
+          "colorSettings": {
+            "mode": "background",
+            "type": "static",
+            "staticColor": "blue"
+          }
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 5,
+        "x": 0,
+        "y": 62
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 22",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Healthy MDE Agents",
+        "query": "// Healthy MDE Agents\nDeviceInfo\n| where OnboardingStatus == \"Onboarded\"\n| summarize arg_max(TimeGenerated, *) by DeviceId\n| summarize HealthyMDEAgents=countif(\n    SensorHealthState == \"Active\"\n    and TimeGenerated > ago(24h)\n)",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "colorSettings": {
+            "mode": "background",
+            "type": "heatmap",
+            "heatmapPalette": "redGreen",
+            "heatmapMax": 1200,
+            "heatmapMin": 0
+          },
+          "tagTextPosition": "bottom"
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 3,
+        "h": 5,
+        "x": 0,
+        "y": 67
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 22",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Stale MDE Agents",
+        "query": "// Stale MDE Agents\nDeviceInfo\n| where OnboardingStatus == \"Onboarded\"\n| summarize arg_max(TimeGenerated, *) by DeviceId\n| summarize HealthyMDEAgents=countif(\n    SensorHealthState != \"Active\"\n    and TimeGenerated < ago(24h)\n)",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "colorSettings": {
+            "mode": "background",
+            "type": "heatmap",
+            "heatmapPalette": "redGreen",
+            "heatmapMin": 0,
+            "heatmapMax": 1200
+          },
+          "tagTextPosition": "bottom"
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 3,
+        "h": 5,
+        "x": 3,
+        "y": 67
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 23",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "MDE Agent Coverage %",
+        "query": "// MDE Agent Coverage %\nDeviceInfo\n| where OnboardingStatus == \"Onboarded\"\n| summarize arg_max(TimeGenerated, *) by DeviceId\n| summarize\n    HealthyMDEAgents=countif(\n        SensorHealthState == \"Active\"\n        and TimeGenerated > ago(24h)\n    ),\n    TotalMDEAgents=count()\n| extend\n    HealthyPercent=round((HealthyMDEAgents * 100.0) / TotalMDEAgents, 2),\n    StalePercent=round(((TotalMDEAgents - HealthyMDEAgents) * 100.0) / TotalMDEAgents, 2)\n| project HealthyPercent, StalePercent\n| mv-expand Status=dynamic([\"Healthy\",\"Stale\"]) to typeof(string)\n| extend Percentage=iff(Status==\"Healthy\", HealthyPercent, StalePercent)\n| project Status, Percentage",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "categoricalbar",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Healthy",
+              "color": "greenDarkDark",
+              "label": "Healthy"
+            },
+            {
+              "seriesName": "Stale",
+              "label": "Stale",
+              "color": "red"
+            }
+          ]
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 4,
+        "h": 10,
+        "x": 6,
+        "y": 62
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 23",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "MDE Agent Coverage %",
+        "query": "// MDE Agent Coverage %\nDeviceInfo\n| where OnboardingStatus == \"Onboarded\"\n| summarize arg_max(TimeGenerated, *) by DeviceId\n| summarize\n    HealthyMDEAgents=countif(\n        SensorHealthState == \"Active\"\n        and TimeGenerated > ago(24h)\n    ),\n    TotalMDEAgents=count()\n| extend\n    HealthyPercent=round((HealthyMDEAgents * 100.0) / TotalMDEAgents, 2),\n    StalePercent=round(((TotalMDEAgents - HealthyMDEAgents) * 100.0) / TotalMDEAgents, 2)\n| project HealthyPercent, StalePercent\n| mv-expand Status=dynamic([\"Healthy\",\"Stale\"]) to typeof(string)\n| extend Percentage=iff(Status==\"Healthy\", HealthyPercent, StalePercent)\n| project Status, Percentage",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Healthy",
+              "color": "green",
+              "label": "Healthy"
+            },
+            {
+              "seriesName": "Stale",
+              "label": "Stale",
+              "color": "yellow"
+            }
+          ],
+          "legendSettings": {
+            "position": "right"
+          }
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 10,
+        "x": 18,
+        "y": 4
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 24",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "MDE Agent Health Details",
+        "query": "// MDE Agent Health Details\nDeviceInfo\n| where OnboardingStatus == \"Onboarded\"\n| summarize arg_max(TimeGenerated, *) by DeviceId\n| where isnotempty(DeviceName)\n| extend HoursSinceLastSeen=datetime_diff(\"hour\", now(), TimeGenerated)\n| extend Status=case(\n    SensorHealthState != \"Active\" and TimeGenerated <= ago(24h), \"Sensor Issue + Stale\",\n    SensorHealthState != \"Active\", \"Sensor Issue\",\n    TimeGenerated <= ago(24h), \"Stale\",\n    \"Healthy\"\n)\n| extend StatusOrder=case(\n    Status == \"Sensor Issue & Stale\", 1,\n    Status == \"Sensor Issue\", 2,\n    Status == \"Stale\", 3,\n    Status == \"Healthy\", 4,\n    5\n)\n| order by StatusOrder asc, HoursSinceLastSeen desc\n| project\n    DeviceName,\n    OSPlatform,\n    OSVersion,\n    MDEAgentVersion=ClientVersion,\n    SensorHealthState,\n    LastSeen=TimeGenerated,\n    HoursSinceLastSeen,\n    Status",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "110px"
+              },
+              "columnMatch": "DeviceName",
+              "formatter": 0
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "70px"
+              },
+              "columnMatch": "OSPlatform",
+              "formatter": 0
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "60px"
+              },
+              "columnMatch": "OSVersion",
+              "formatter": 0
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "115px"
+              },
+              "columnMatch": "MDEAgentVersion",
+              "formatter": 0
+            },
+            {
+              "columnMatch": "SensorHealthState",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "operator": "==",
+                    "sourceColumn": "SensorHealthState",
+                    "representation": "red",
+                    "text": "Inactive",
+                    "thresholdValue": "Inactive"
+                  },
+                  {
+                    "operator": "==",
+                    "sourceColumn": "SensorHealthState",
+                    "thresholdValue": "Active",
+                    "representation": "greenDarkDark",
+                    "text": "Active"
+                  },
+                  {
+                    "operator": "==",
+                    "sourceColumn": "SensorHealthState",
+                    "thresholdValue": "No sensor data",
+                    "representation": "gray",
+                    "text": "No sensor data"
+                  },
+                  {
+                    "operator": "Default",
+                    "representation": "lightBlue"
+                  }
+                ]
+              }
+            },
+            {
+              "columnMatch": "HoursSinceLastSeen",
+              "formatter": 8,
+              "formatOptions": {
+                "palette": "greenRed",
+                "max": 24,
+                "min": 0
+              }
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "160px"
+              },
+              "columnMatch": "LastSeen",
+              "formatter": 0
+            },
+            {
+              "columnMatch": "Status",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "operator": "==",
+                    "sourceColumn": "Status",
+                    "text": "Sensor Issue",
+                    "thresholdValue": "Sensor Issue",
+                    "representation": "redBright"
+                  },
+                  {
+                    "operator": "==",
+                    "sourceColumn": "Status",
+                    "thresholdValue": "Stale",
+                    "representation": "yellow",
+                    "text": "Stale"
+                  },
+                  {
+                    "operator": "==",
+                    "sourceColumn": "Status",
+                    "thresholdValue": "Healthy",
+                    "representation": "greenDarkDark",
+                    "text": "Healthy"
+                  },
+                  {
+                    "operator": "Default",
+                    "representation": "lightBlue"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 14,
+        "h": 10,
+        "x": 10,
+        "y": 62
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 25",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Data Source Health Trend (7 Days)",
+        "query": "// Data Source Activity Trend (7 Days)\nlet TotalConnectors = 17;\nlet Days = range Date from startofday(ago(6d)) to startofday(now()) step 1d;\nlet ConnectorActivity =\nunion isfuzzy=true\n(\nAzureActivity\n| where TimeGenerated >= startofday(ago(6d))\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Azure Activity\"\n),\n(\nUsage\n| where TimeGenerated >= startofday(ago(6d))\n| where DataType == \"CloudflareV2_CL\"\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Cloudflare (Using Blob Container)\"\n),\n(\nCommonSecurityLog\n| where TimeGenerated >= startofday(ago(6d))\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Common Event Format (CEF) via AMA\"\n),\n(\nUsage\n| where TimeGenerated >= startofday(ago(6d))\n| where DataType == \"GoogleWorkspaceReports\"\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Google Workspace Activities\"\n),\n(\nOfficeActivity\n| where TimeGenerated >= startofday(ago(6d))\n| where OfficeWorkload in (\"SharePoint\",\"OneDrive\",\"Exchange\",\"MicrosoftTeams\")\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Microsoft 365\"\n),\n(\nSecurityAlert\n| where TimeGenerated >= startofday(ago(6d))\n| where ProductName == \"Microsoft 365 Insider Risk Management\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Microsoft 365 Insider Risk Management\"\n),\n(\nunion isfuzzy=true\n(\nSecurityAlert\n| where TimeGenerated >= startofday(ago(6d))\n| where ProductName == \"Microsoft Cloud App Security\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| project TimeGenerated\n),\n(\nUsage\n| where TimeGenerated >= startofday(ago(6d))\n| where DataType == \"McasShadowItReporting\"\n| project TimeGenerated\n)\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Microsoft Defender for Cloud Apps\"\n),\n(\nSecurityAlert\n| where TimeGenerated >= startofday(ago(6d))\n| where ProviderName == \"MDATP\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Microsoft Defender for Endpoint\"\n),\n(\nSecurityAlert\n| where TimeGenerated >= startofday(ago(6d))\n| where ProductName == \"Azure Advanced Threat Protection\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Microsoft Defender for Identity\"\n),\n(\nSecurityAlert\n| where TimeGenerated >= startofday(ago(6d))\n| where ProviderName == \"OATP\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Microsoft Defender for Office 365\"\n),\n(\nunion isfuzzy=true\n(\nSecurityIncident\n| where TimeGenerated >= startofday(ago(6d))\n| where ProviderName in (\"Microsoft 365 Defender\",\"Microsoft XDR\")\n| project TimeGenerated\n),\n(\nSecurityAlert\n| where TimeGenerated >= startofday(ago(6d))\n| extend OriginalProductName=tostring(todynamic(ExtendedProperties).OriginalProductName)\n| where (isempty(OriginalProductName) and ProductName in (\"Microsoft Defender Advanced Threat Protection\",\"Office 365 Advanced Threat Protection\",\"Azure Advanced Threat Protection\",\"Microsoft Cloud App Security\",\"Microsoft 365 Defender\",\"Microsoft Defender XDR\",\"Microsoft Threat Intelligence\")) or (ProductName in (\"Microsoft 365 Defender\",\"Microsoft Defender XDR\") and OriginalProductName in (\"Microsoft Defender Advanced Threat Protection\",\"Office 365 Advanced Threat Protection\",\"Azure Advanced Threat Protection\",\"Microsoft Cloud App Security\",\"Microsoft 365 Defender\",\"Microsoft Defender XDR\",\"Microsoft Threat Intelligence\"))\n| project TimeGenerated\n),\n(\nSecurityAlert\n| where TimeGenerated >= startofday(ago(6d))\n| where ProductName in (\"Microsoft 365 Defender\",\"Microsoft Defender XDR\")\n| project TimeGenerated\n)\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Microsoft Defender XDR\"\n),\n(\nunion isfuzzy=true\n(\nSigninLogs\n| where TimeGenerated >= startofday(ago(6d))\n| project TimeGenerated\n),\n(\nAADManagedIdentitySignInLogs\n| where TimeGenerated >= startofday(ago(6d))\n| project TimeGenerated\n),\n(\nMicrosoftGraphActivityLogs\n| where TimeGenerated >= startofday(ago(6d))\n| project TimeGenerated\n)\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Microsoft Entra ID\"\n),\n(\nSecurityAlert\n| where TimeGenerated >= startofday(ago(6d))\n| where ProductName == \"Azure Active Directory Identity Protection\"\n| extend alertWasCustomized=bag_has_key(todynamic(ExtendedProperties), \"OriginalProductName\")\n| where alertWasCustomized == false\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Microsoft Entra ID Protection\"\n),\n(\nunion isfuzzy=true\n(\nThreatIntelIndicators\n| where TimeGenerated >= startofday(ago(6d))\n| where SourceSystem in (\"Microsoft Defender Threat Intelligence\",\"Microsoft Emerging Threat Feed\")\n| project TimeGenerated\n),\n(\nUsage\n| where TimeGenerated >= startofday(ago(6d))\n| where DataType == \"ThreatIntelObjects\"\n| project TimeGenerated\n)\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Microsoft Threat Intelligence\"\n),\n(\nSyslog\n| where TimeGenerated >= startofday(ago(6d))\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Syslog via AMA\"\n),\n(\nSecurityAlert\n| where TimeGenerated >= startofday(ago(6d))\n| where ProductName == \"Azure Security Center\"\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Tenant-based Microsoft Defender for Cloud\"\n),\n(\nSecurityEvent\n| where TimeGenerated >= startofday(ago(6d))\n| summarize Events=count() by Date=startofday(TimeGenerated)\n| extend Connector=\"Windows Security Events via AMA\"\n);\nDays\n| join kind=leftouter (\n    ConnectorActivity\n    | summarize HealthyConnectors=dcount(Connector) by Date\n) on Date\n| extend HealthyConnectors=coalesce(HealthyConnectors, 0)\n| extend UnhealthyConnectors=TotalConnectors - HealthyConnectors\n| project Date, Healthy=HealthyConnectors, Unhealthy=UnhealthyConnectors\n| order by Date desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Healthy",
+              "formatter": 1
+            },
+            {
+              "columnMatch": "Unhealthy",
+              "formatter": 1
+            }
+          ]
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 5,
+        "h": 8,
+        "x": 9,
+        "y": 16
+      }
+    },
+    {
+      "type": 1,
+      "name": "text - 27",
+      "content": {
+        "json": "# Executive Summary\r\n",
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "resourceIds": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 2
+      }
+    }
+  ],
+  "layout": {
+    "type": "grid"
+  },
+  "styleSettings": {
+    "background": "lighter"
+  },
+  "fallbackResourceIds": [
+    "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

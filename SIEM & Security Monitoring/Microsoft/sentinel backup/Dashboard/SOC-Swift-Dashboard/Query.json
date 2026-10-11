@@ -1,0 +1,808 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 11,
+      "content": {
+        "version": "LinkItem/1.0",
+        "style": "tabs",
+        "links": [
+          {
+            "id": "9eccf8e8-db73-418c-827c-bdbe7a21a608",
+            "cellValue": "Tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Overview",
+            "subTarget": "Overview",
+            "style": "link"
+          },
+          {
+            "id": "f5ad7687-f463-4031-ab49-be313aae25b0",
+            "cellValue": "Tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Endpoint Security",
+            "subTarget": "Endpoint",
+            "style": "link"
+          }
+        ]
+      },
+      "name": "links - 12",
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 2
+      }
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "name": "TimeRange",
+            "label": "Incident Creation Time",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 86400000
+            },
+            "id": "8bebeca8-a7a2-4975-b3ab-3b61916727ba"
+          },
+          {
+            "name": "Severity",
+            "type": 2,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "value": [
+              "value::all"
+            ],
+            "typeSettings": {
+              "selectAllValue": "*",
+              "additionalResourceOptions": [
+                "value::all"
+              ]
+            },
+            "query": "SecurityIncident | summarize by Severity | project Value=Severity, Label=Severity",
+            "resourceType": "microsoft.operationalinsights/workspaces",
+            "id": "e5838130-7f18-40c6-aa1a-7199f846c765"
+          },
+          {
+            "name": "Status",
+            "type": 2,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "value": [
+              "value::all"
+            ],
+            "typeSettings": {
+              "selectAllValue": "*",
+              "additionalResourceOptions": [
+                "value::all"
+              ]
+            },
+            "query": "SecurityIncident | summarize by Status | project Value=Status, Label=Status",
+            "resourceType": "microsoft.operationalinsights/workspaces",
+            "id": "7de6ce4f-7883-44ad-9f8e-4be16fa3a0e5"
+          },
+          {
+            "name": "Search",
+            "type": 1,
+            "value": "",
+            "id": "a04f7e70-58f2-4844-9a85-8ba445d9c1ab"
+          }
+        ],
+        "style": "pills"
+      },
+      "name": "Parameters",
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 0,
+        "y": 2,
+        "w": 24,
+        "h": 2
+      }
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "# Endpoint Security\n"
+      },
+      "name": "Header",
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 0,
+        "y": 4,
+        "w": 24,
+        "h": 2
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let TaggedDevices =\nDeviceInfo\n| summarize arg_max(TimeGenerated, *) by DeviceId\n| where DeviceManualTags has \"swift\"\n| extend HostName = tolower(tostring(split(DeviceName, \".\")[0]))\n| project HostName;\nlet TaggedAlerts =\nSecurityAlert\n| mv-expand Entity=todynamic(Entities)\n| where tostring(Entity.Type) == \"host\"\n| extend HostName=tostring(Entity.HostName)\n| where HostName in (TaggedDevices)\n| distinct SystemAlertId;\nSecurityIncident\n| mv-expand AlertIds\n| extend SystemAlertId=tostring(AlertIds)\n| join kind=inner TaggedAlerts on SystemAlertId\n| summarize arg_max(TimeGenerated, Severity) by IncidentNumber\n| summarize Incidents=dcount(IncidentNumber) by Severity\n| order by Incidents desc",
+        "size": 3,
+        "title": "Incidents by Severity",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Medium",
+              "color": "orange"
+            },
+            {
+              "seriesName": "Low",
+              "color": "yellow"
+            },
+            {
+              "seriesName": "High",
+              "color": "red"
+            },
+            {
+              "seriesName": "Informational",
+              "color": "gray"
+            }
+          ],
+          "legendSettings": {
+            "position": "right"
+          }
+        },
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "showRefreshButton": true
+      },
+      "customWidth": "25",
+      "name": "Incidents by Severity",
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 0,
+        "y": 6,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let TaggedDevices =\nDeviceInfo\n| summarize arg_max(TimeGenerated, *) by DeviceId\n| where DeviceManualTags has \"swift\"\n| extend HostName = tolower(tostring(split(DeviceName, \".\")[0]))\n| project HostName;\nlet TaggedAlerts =\nSecurityAlert\n| mv-expand Entity = todynamic(Entities)\n| where tostring(Entity.Type) == \"host\"\n| extend HostName = tostring(Entity.HostName)\n| where HostName in (TaggedDevices)\n| project SystemAlertId;\nSecurityIncident\n| mv-expand AlertIds\n| extend SystemAlertId = tostring(AlertIds)\n| join kind=inner TaggedAlerts on SystemAlertId\n| summarize arg_max(TimeGenerated, *) by IncidentNumber\n| extend SOC_Status = case(\nStatus == \"New\", \"Active\",\nStatus == \"Active\", \"In Progress\",\nStatus == \"Closed\", \"Resolved\",\nStatus\n)\n| summarize Incidents = count() by SOC_Status\n",
+        "size": 3,
+        "title": "Incidents by Status",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Resolved",
+              "color": "greenDark"
+            },
+            {
+              "seriesName": "Active",
+              "color": "redBright"
+            },
+            {
+              "seriesName": "In Progress",
+              "color": "blue"
+            }
+          ],
+          "legendSettings": {
+            "position": "right"
+          }
+        },
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange"
+      },
+      "customWidth": "25",
+      "name": "Incidents by Status",
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 6,
+        "y": 6,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let TaggedDevices =\nDeviceInfo\n| summarize arg_max(TimeGenerated, *) by DeviceId\n| where DeviceManualTags has \"swift\"\n| extend HostName = tolower(tostring(split(DeviceName, \".\")[0]))\n| project HostName;\nlet TaggedAlerts =\nSecurityAlert\n| where TimeGenerated >= ago(30d)\n| mv-expand Entity = todynamic(Entities)\n| where tostring(Entity.Type) == \"host\"\n| extend HostName = tostring(Entity.HostName)\n| where HostName in (TaggedDevices)\n| project SystemAlertId;\nSecurityIncident\n| mv-expand AlertIds\n| extend SystemAlertId = tostring(AlertIds)\n| join kind=inner TaggedAlerts on SystemAlertId\n| summarize arg_max(TimeGenerated, *) by IncidentNumber\n| extend OwnerName = iff(\n    isempty(tostring(parse_json(Owner).assignedTo)),\n    \"Unassigned\",\n    tostring(parse_json(Owner).assignedTo)\n)\n| summarize Incidents=count() by OwnerName",
+        "size": 3,
+        "title": "Incidents by Owner",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Unassigned",
+              "color": "blueDark"
+            },
+            {
+              "seriesName": "Q SOC",
+              "color": "pink"
+            }
+          ],
+          "legendSettings": {
+            "position": "right"
+          }
+        },
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange"
+      },
+      "customWidth": "25",
+      "name": "Incidents by Owner",
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 12,
+        "y": 6,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let TaggedDevices =\nDeviceInfo\n| summarize arg_max(TimeGenerated, *) by DeviceId\n| where DeviceManualTags has \"swift\"\n| extend HostName = tolower(tostring(split(DeviceName, \".\")[0]))\n| project HostName;\nlet TaggedAlerts =\nSecurityAlert\n| where TimeGenerated >= ago(30d)\n| mv-expand Entity = todynamic(Entities)\n| where tostring(Entity.Type) == \"host\"\n| extend HostName = tostring(Entity.HostName)\n| where HostName in (TaggedDevices)\n| project SystemAlertId;\nSecurityIncident\n| mv-expand AlertIds\n| extend SystemAlertId = tostring(AlertIds)\n| join kind=inner TaggedAlerts on SystemAlertId\n| summarize arg_max(TimeGenerated, *) by IncidentNumber\n| mv-expand Label = todynamic(Labels)\n| extend WorkingEngineer = tostring(Label.labelName)\n| where isnotempty(WorkingEngineer)\n| summarize Incidents = dcount(IncidentNumber) by WorkingEngineer\n| order by Incidents desc",
+        "size": 3,
+        "title": "Incidents Working Engineer",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "chartSettings": {
+          "seriesLabelSettings": [],
+          "legendSettings": {
+            "position": "right"
+          }
+        }
+      },
+      "customWidth": "25",
+      "name": "Incidents Working Engineer",
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 18,
+        "y": 6,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let TaggedDevices =\nDeviceInfo\n| summarize arg_max(TimeGenerated, *) by DeviceId\n| where DeviceManualTags has \"swift\"\n| extend HostName = tolower(tostring(split(DeviceName, \".\")[0]))\n| project HostName;\nlet TaggedAlerts =\nSecurityAlert\n| mv-expand Entity = todynamic(Entities)\n| where tostring(Entity.Type) == \"host\"\n| extend HostName = tostring(Entity.HostName)\n| where HostName in (TaggedDevices)\n| project SystemAlertId;\nSecurityIncident\n| mv-expand AlertIds\n| extend SystemAlertId = tostring(AlertIds)\n| join kind=inner TaggedAlerts on SystemAlertId\n| summarize arg_max(TimeGenerated, *) by IncidentNumber\n| extend SOC_Status = case(\n    Status == \"New\", \"Active\",\n    Status == \"Active\", \"In Progress\",\n    Status == \"Closed\", \"Resolved\",\n    Status\n)\n| mv-expand Label = todynamic(Labels)\n| extend LabelName = tostring(Label.labelName)\n| summarize\n    Severity = take_any(Severity),\n    Title = take_any(Title),\n    Alerts = take_any(tolong(parse_json(AdditionalData).alertsCount)),\n    Provider = take_any(ProviderName),\n    Created = take_any(CreatedTime),\n    Updated = take_any(LastModifiedTime),\n    Owner = take_any(iff(\n        isempty(tostring(parse_json(Owner).assignedTo)),\n        \"Unassigned\",\n        tostring(parse_json(Owner).assignedTo)\n    )),\n    Status = take_any(Status),\n    SOC_Status = take_any(SOC_Status),\n    ClosingComment = take_any(ClassificationComment),\n    WorkingEngineer = make_set(LabelName)\nby IncidentNumber\n| project\n    Severity,\n    IncidentNumber,\n    Title,\n    Alerts,\n    Provider,\n    Created,\n    Updated,\n    Owner,\n    WorkingEngineer = strcat_array(WorkingEngineer, \", \"),\n    Status=SOC_Status,\n    ClosingComment\n| order by Created desc",
+        "size": 0,
+        "title": "Detailed Incident List",
+        "showExportToExcel": true,
+        "exportToExcelOptions": "all",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Severity",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "operator": "contains",
+                    "sourceColumn": "Severity",
+                    "thresholdValue": "High",
+                    "representation": "red"
+                  },
+                  {
+                    "operator": "contains",
+                    "sourceColumn": "Severity",
+                    "thresholdValue": "Medium",
+                    "representation": "orange"
+                  },
+                  {
+                    "operator": "contains",
+                    "sourceColumn": "Severity",
+                    "thresholdValue": "Low",
+                    "representation": "yellow"
+                  },
+                  {
+                    "operator": "contains",
+                    "sourceColumn": "Severity",
+                    "thresholdValue": "Informational",
+                    "representation": "gray"
+                  },
+                  {
+                    "operator": "Default",
+                    "representation": "lightBlue"
+                  }
+                ],
+                "customColumnWidthSetting": "110px"
+              }
+            },
+            {
+              "columnMatch": "SeverityScore",
+              "formatter": 5
+            },
+            {
+              "columnMatch": "Owner",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "operator": "contains",
+                    "thresholdValue": "Unassigned",
+                    "representation": "blueDark",
+                    "text": "Unassigned"
+                  },
+                  {
+                    "operator": "contains",
+                    "thresholdValue": "Q SOC",
+                    "representation": "pink",
+                    "text": "Q SOC"
+                  },
+                  {
+                    "operator": "Default",
+                    "thresholdValue": null,
+                    "representation": "lightBlue",
+                    "text": ""
+                  }
+                ],
+                "customColumnWidthSetting": "80px"
+              }
+            },
+            {
+              "columnMatch": "Status",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "operator": "startsWith",
+                    "thresholdValue": "Activ",
+                    "representation": "redBright",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "startsWith",
+                    "thresholdValue": "In Progress",
+                    "representation": "blue",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "startsWith",
+                    "thresholdValue": "Resolved",
+                    "representation": "greenDark",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "Default",
+                    "thresholdValue": null,
+                    "representation": "lightBlue",
+                    "text": "{0}{1}"
+                  }
+                ]
+              }
+            },
+            {
+              "columnMatch": "IncidentNumber",
+              "formatter": 1
+            },
+            {
+              "columnMatch": "Alerts",
+              "formatter": 1,
+              "formatOptions": {
+                "customColumnWidthSetting": "40px"
+              }
+            },
+            {
+              "columnMatch": "Created",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "160px"
+              }
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "100px"
+              },
+              "columnMatch": "Provider",
+              "formatter": 0
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "160px"
+              },
+              "columnMatch": "Updated",
+              "formatter": 0
+            },
+            {
+              "columnMatch": "WorkingEngineer",
+              "formatter": 0
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "230px"
+              },
+              "columnMatch": "Title",
+              "formatter": 0
+            }
+          ],
+          "rowLimit": 5000,
+          "filter": true,
+          "sortBy": [
+            {
+              "itemKey": "$gen_thresholds_Status_10",
+              "sortOrder": 1
+            }
+          ]
+        },
+        "sortBy": [
+          {
+            "itemKey": "$gen_thresholds_Status_10",
+            "sortOrder": 1
+          }
+        ],
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange"
+      },
+      "name": "Detailed Incident List",
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 0,
+        "y": 14,
+        "w": 24,
+        "h": 10
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let TaggedDevices =\nDeviceInfo\n| summarize arg_max(TimeGenerated, *) by DeviceId\n| where DeviceManualTags has \"swift\"\n| extend HostName = tolower(tostring(split(DeviceName, \".\")[0]))\n| project HostName;\nlet TaggedAlerts =\nSecurityAlert\n| mv-expand Entity = todynamic(Entities)\n| where tostring(Entity.Type) == \"host\"\n| extend HostName = tostring(Entity.HostName)\n| where HostName in (TaggedDevices)\n| project SystemAlertId;\nSecurityIncident\n| mv-expand AlertIds\n| extend SystemAlertId = tostring(AlertIds)\n| join kind=inner TaggedAlerts on SystemAlertId\n| summarize arg_max(TimeGenerated, *) by IncidentNumber\n| mv-expand Tactic = todynamic(parse_json(AdditionalData).tactics)\n| extend Tactic = tostring(Tactic)\n| summarize Incidents = count() by Tactic\n| top 10 by Incidents desc",
+        "size": 3,
+        "title": "Top Attack Tactics",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "CommandAndControl",
+              "color": "blueDark"
+            },
+            {
+              "seriesName": "Discovery",
+              "color": "pink"
+            },
+            {
+              "seriesName": "Exfiltration",
+              "color": "brown"
+            },
+            {
+              "seriesName": "Persistence",
+              "color": "greenDarkDark"
+            },
+            {
+              "seriesName": "Other",
+              "color": "magenta"
+            },
+            {
+              "seriesName": "CredentialAccess",
+              "color": "orange"
+            },
+            {
+              "seriesName": "Execution",
+              "color": "redBright"
+            }
+          ],
+          "legendSettings": {
+            "position": "right"
+          }
+        },
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange"
+      },
+      "customWidth": "25",
+      "name": "Top Attack Tactics",
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 0,
+        "y": 24,
+        "w": 6,
+        "h": 9
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let TaggedDevices =\r\nDeviceInfo\r\n| summarize arg_max(TimeGenerated, *) by DeviceId\r\n| where DeviceManualTags has \"swift\"\r\n| extend HostName = tolower(tostring(split(DeviceName, \".\")[0]))\r\n| project HostName;\r\nlet TaggedHosts =\r\nSecurityAlert\r\n| mv-expand Entity = todynamic(Entities)\r\n| where tostring(Entity.Type) == \"host\"\r\n| extend HostName = tostring(Entity.HostName)\r\n| where HostName in (TaggedDevices)\r\n| project SystemAlertId, HostName;\r\nSecurityIncident\r\n| mv-expand AlertIds\r\n| extend SystemAlertId = tostring(AlertIds)\r\n| join kind=inner TaggedHosts on SystemAlertId\r\n| summarize arg_max(TimeGenerated, *) by IncidentNumber\r\n| summarize Incidents = dcount(IncidentNumber) by HostName\r\n//| top 10 by Incidents desc​‌",
+        "size": 3,
+        "title": "Top Attacked Hosts",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "tileSettings": {
+          "showBorder": false,
+          "titleContent": {
+            "columnMatch": "Host",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "TotalAlerts",
+            "formatter": 12,
+            "formatOptions": {
+              "palette": "auto"
+            },
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "maximumSignificantDigits": 3,
+                "maximumFractionDigits": 2
+              }
+            }
+          }
+        },
+        "graphSettings": {
+          "type": 0,
+          "topContent": {
+            "columnMatch": "Host",
+            "formatter": 1
+          },
+          "centerContent": {
+            "columnMatch": "TotalAlerts",
+            "formatter": 1,
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "maximumSignificantDigits": 3,
+                "maximumFractionDigits": 2
+              }
+            }
+          }
+        },
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Other",
+              "color": "blueDark"
+            },
+            {
+              "seriesName": "sq-pc-286",
+              "color": "orangeDark"
+            },
+            {
+              "seriesName": "sq-srvfile-002",
+              "color": "purpleDark"
+            },
+            {
+              "seriesName": "sq-pc-443",
+              "color": "greenDark"
+            },
+            {
+              "seriesName": "kinship-vm",
+              "color": "pink"
+            },
+            {
+              "seriesName": "sq-pc-100",
+              "color": "red"
+            },
+            {
+              "seriesName": "sq-pc-260",
+              "color": "gray"
+            }
+          ],
+          "legendSettings": {
+            "position": "right"
+          }
+        },
+        "mapSettings": {
+          "locInfo": "LatLong",
+          "sizeSettings": "TotalAlerts",
+          "sizeAggregation": "Sum",
+          "legendMetric": "TotalAlerts",
+          "legendAggregation": "Sum",
+          "itemColorSettings": {
+            "type": "heatmap",
+            "colorAggregation": "Sum",
+            "nodeColorField": "TotalAlerts",
+            "heatmapPalette": "greenRed"
+          }
+        },
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange"
+      },
+      "customWidth": "25",
+      "name": "Top Attacked Hosts",
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 6,
+        "y": 24,
+        "w": 6,
+        "h": 9
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let TaggedDevices =\r\nDeviceInfo\r\n| summarize arg_max(TimeGenerated, *) by DeviceId\r\n| where DeviceManualTags has \"swift\"\r\n| extend HostName = tolower(tostring(split(DeviceName, \".\")[0]))\r\n| project HostName;\r\nlet TaggedAlertIds =\r\nSecurityAlert\r\n| mv-expand Entity = todynamic(Entities)\r\n| where tostring(Entity.Type) == \"host\"\r\n| extend HostName = tostring(Entity.HostName)\r\n| where HostName in (TaggedDevices)\r\n| distinct SystemAlertId;\r\nSecurityAlert\r\n| where SystemAlertId in (TaggedAlertIds)\r\n| mv-expand Entity = todynamic(Entities)\r\n| where tostring(Entity.Type) == \"ip\"\r\n| extend IPAddress = tostring(Entity.Address)\r\n| where isnotempty(IPAddress)\r\n| summarize Alerts = dcount(SystemAlertId) by IPAddress\r\n//| top 10 by Alerts desc",
+        "size": 3,
+        "title": "Most Attacking IPs",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "tileSettings": {
+          "showBorder": false,
+          "titleContent": {
+            "columnMatch": "SrcIP",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "TotalAlerts",
+            "formatter": 12,
+            "formatOptions": {
+              "palette": "auto"
+            },
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "maximumSignificantDigits": 3,
+                "maximumFractionDigits": 2
+              }
+            }
+          }
+        },
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Other",
+              "color": "blueDark"
+            },
+            {
+              "seriesName": "204.76.203.93",
+              "color": "orange"
+            },
+            {
+              "seriesName": "185.132.53.103",
+              "color": "purpleDark"
+            },
+            {
+              "seriesName": "87.120.191.65",
+              "color": "blueDark"
+            },
+            {
+              "seriesName": "81.168.83.103",
+              "color": "turquoise"
+            },
+            {
+              "seriesName": "193.142.146.230",
+              "color": "yellow"
+            },
+            {
+              "seriesName": "89.42.231.200",
+              "color": "turquoise"
+            }
+          ],
+          "legendSettings": {
+            "position": "right"
+          }
+        },
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange"
+      },
+      "customWidth": "25",
+      "name": "Most Attacking IPs",
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 12,
+        "y": 24,
+        "w": 6,
+        "h": 9
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let TaggedDevices =\r\nDeviceInfo\r\n| summarize arg_max(TimeGenerated, *) by DeviceId\r\n| where DeviceManualTags has \"swift\"\r\n| extend HostName = tolower(tostring(split(DeviceName, \".\")[0]))\r\n| project HostName;\r\nlet TaggedAlerts =\r\nSecurityAlert\r\n| mv-expand Entity = todynamic(Entities)\r\n| where tostring(Entity.Type) == \"host\"\r\n| extend HostName = tostring(Entity.HostName)\r\n| where HostName in (TaggedDevices)\r\n| project SystemAlertId;\r\nSecurityIncident\r\n| mv-expand AlertIds\r\n| extend SystemAlertId = tostring(AlertIds)\r\n| join kind=inner TaggedAlerts on SystemAlertId\r\n| summarize arg_max(TimeGenerated, *) by IncidentNumber\r\n| where Status == \"Closed\"\r\n| where isnotempty(ClosedTime)\r\n| extend ResolveTimeHours = datetime_diff(\"minute\", ClosedTime, CreatedTime) / 60.0\r\n| summarize AvgMTTR_Hours = round(avg(ResolveTimeHours), 2) by bin(CreatedTime, 1d)\r\n| order by CreatedTime asc",
+        "size": 1,
+        "title": "Mean Time To Resolve",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "CreatedTime",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "operator": "Default",
+                    "thresholdValue": null,
+                    "representation": "magenta",
+                    "text": "{0}{1}"
+                  }
+                ]
+              }
+            },
+            {
+              "columnMatch": "AvgMTTR_Hours",
+              "formatter": 1
+            }
+          ],
+          "sortBy": [
+            {
+              "itemKey": "AvgMTTR",
+              "sortOrder": 1
+            }
+          ]
+        },
+        "sortBy": [
+          {
+            "itemKey": "AvgMTTR",
+            "sortOrder": 1
+          }
+        ],
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange"
+      },
+      "customWidth": "25",
+      "name": "Mean Time To Resolve",
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "x": 18,
+        "y": 24,
+        "w": 6,
+        "h": 9
+      }
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json",
+  "layout": {
+    "type": "grid"
+  }
+}

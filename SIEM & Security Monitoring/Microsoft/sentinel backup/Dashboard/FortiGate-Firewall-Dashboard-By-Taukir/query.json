@@ -1,0 +1,2205 @@
+{
+  "version": "Notebook/1.0",
+  "name": "Unsaved Dashboard",
+  "items": [
+    {
+      "type": 9,
+      "name": "parameters - 0",
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "label": "Time Range",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 86400000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2592000000
+                }
+              ],
+              "allowCustom": false
+            },
+            "id": "a0e69e10-d4c3-4a5f-a7a0-a48dc5bdf006"
+          }
+        ]
+      },
+      "styleSettings": {
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 0,
+        "showBorder": false,
+        "borderStyle": "light thick"
+      }
+    },
+    {
+      "type": 1,
+      "name": "text - 1",
+      "content": {
+        "json": "# 🛡️ Security Posture & Threat Trends\r\n\r\n",
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "resourceIds": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 14
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 9",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Top Traffic Actions",
+        "query": "// Traffic Action Breakdown\nlet TotalEvents =\n    toscalar(\n        CommonSecurityLog\n        | where DeviceVendor == \"Fortinet\"\n        | where DeviceProduct =~ \"Fortigate\"\n        | count\n    );\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| extend Action = extract(@\"[^ ]+$\", 0, replace_string(Activity, \"traffic:\", \"\"))\n| summarize Events=count() by Action\n| extend PercentageValue = round((todouble(Events) * 100.0) / TotalEvents, 2)\n| extend ActionLabel = strcat(Action)\n| project ActionLabel, PercentageValue\n| order by PercentageValue desc\n\n\n\n\n",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "accept",
+              "color": "green"
+            },
+            {
+              "seriesName": "deny",
+              "color": "redBright"
+            },
+            {
+              "seriesName": "close",
+              "color": "blueDark"
+            },
+            {
+              "seriesName": "client-rst",
+              "color": "orange"
+            },
+            {
+              "seriesName": "signature",
+              "color": "purple"
+            },
+            {
+              "seriesName": "server-rst",
+              "color": "yellow"
+            }
+          ],
+          "tooltipSettings": {
+            "mode": "nearest"
+          },
+          "legendSettings": {
+            "position": "bottom",
+            "sortOrder": 2
+          },
+          "yAxis": [
+            "PercentageValue"
+          ],
+          "showLegend": false,
+          "showMetrics": true,
+          "ySettings": {
+            "numberFormatSettings": {
+              "unit": 1,
+              "options": {
+                "style": "decimal",
+                "useGrouping": false
+              }
+            }
+          }
+        },
+        "titleOptions": {}
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 8,
+        "h": 9,
+        "x": 0,
+        "y": 25
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 10",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Top Denied IPs",
+        "query": "CommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where Activity contains \"deny\"\n| extend Country = extract(@\"FTNTFGTsrccountry=([^;]+)\",1,AdditionalExtensions)\n| summarize DeniedCount=count() by SourceIP, Country\n| top 10 by DeniedCount desc\n| join kind=leftouter (\n    ThreatIntelIndicators\n    | summarize arg_max(TimeGenerated, Confidence) by ObservableValue\n) on $left.SourceIP == $right.ObservableValue\n| extend Confidence = todouble(Confidence)\n| extend Confidence = coalesce(Confidence, 0.0)\n| extend Status = iff(Confidence > 50.0, \"Malicious\", \"Not Malicious\")\n| project SourceIP, Country, DeniedCount, Confidence, Status\n| order by DeniedCount desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "gridSettings": {
+          "labelSettings": []
+        },
+        "visualization": "piechart",
+        "showRefreshButton": true,
+        "chartSettings": {
+          "legendSettings": {
+            "position": "bottom",
+            "sortOrder": 1
+          },
+          "seriesLabelSettings": []
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 8,
+        "h": 9,
+        "x": 8,
+        "y": 25
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 8",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Top Source Countries",
+        "query": "let CountryGeo =\n_GetWatchlist('CountryGeo')\n| project Country=SearchKey,\n          Latitude=todouble(latitude),\n          Longitude=todouble(longitude);\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct == \"Fortigate\"\n| extend Country = extract(@\"FTNTFGTsrccountry=([^;]+)\",1,AdditionalExtensions)\n| where Country != \"Reserved\"\n| summarize Events=count() by Country\n| lookup kind=leftouter CountryGeo on Country\n| where isnotempty(Latitude)\n| project \n    Latitude, \n    Longitude, \n    Events, \n    Country\n| take 10\n| order by Events desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "map",
+        "chartSettings": {
+          "xSettings": {
+            "label": "Country"
+          },
+          "ySettings": {
+            "label": "Traffic Count"
+          }
+        },
+        "mapSettings": {
+          "locInfo": "LatLong",
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "sizeSettings": "Events",
+          "sizeAggregation": "Sum",
+          "labelSettings": "Country",
+          "legendMetric": "Events",
+          "legendAggregation": "Sum",
+          "itemColorSettings": {
+            "nodeColorField": "Events",
+            "colorAggregation": "Sum",
+            "type": "heatmap",
+            "heatmapPalette": "greenRed"
+          }
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 12,
+        "h": 12,
+        "x": 0,
+        "y": 89
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 9",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Top Destination Ports",
+        "query": "// Top Destination Ports\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| extend DstPort = iff(\n    isnotempty(DestinationPort),\n    strcat(\"Port: \", tostring(DestinationPort)),\n    \"Other Ports\"\n)\n| summarize TotalEvent=count() by DstPort\n| top 10 by TotalEvent desc\n",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "piechart",
+        "gridSettings": {
+          "labelSettings": [
+            {
+              "columnId": "DestinationPort",
+              "label": "DstPort"
+            },
+            {
+              "columnId": "Events",
+              "label": "TotalEvent"
+            }
+          ],
+          "formatters": [
+            {
+              "formatOptions": {},
+              "columnMatch": "DestinationPort",
+              "formatter": 0,
+              "tooltipFormat": {
+                "tooltip": "test"
+              }
+            }
+          ]
+        },
+        "tileSettings": {
+          "showBorder": true,
+          "size": "full",
+          "sortCriteriaField": "DestinationPort",
+          "sortOrderField": 2
+        },
+        "chartSettings": {
+          "xAxis": "DstPort",
+          "xSettings": {
+            "label": "Destination Ports"
+          },
+          "ySettings": {
+            "label": "Event"
+          },
+          "legendSettings": {
+            "position": "bottom",
+            "sortOrder": 2
+          },
+          "seriesLabelSettings": []
+        }
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "light thick",
+        "w": 8,
+        "h": 9,
+        "x": 16,
+        "y": 25
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 6",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Traffic Trend Over Time",
+        "query": "// Traffic Trend Over Time\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| extend Action =\n    case(\n        Activity contains \"deny\", \"Denied\",\n        Activity contains \"accept\", \"Allowed\",\n        \"\"\n    )\n| where Action != \"\"\n| summarize Events=count() by bin(TimeGenerated, 60m), Action\n| order by TimeGenerated asc\n\n",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "timechart",
+        "chartSettings": {
+          "xSettings": {},
+          "ySettings": {},
+          "legendSettings": {
+            "position": "bottom"
+          },
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Denied",
+              "color": "redBright"
+            },
+            {
+              "seriesName": "Allowed",
+              "color": "green"
+            }
+          ],
+          "customThresholdLine": "5000",
+          "customThresholdLineStyle": 2
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 9,
+        "x": 0,
+        "y": 16
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 7",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Top Policies",
+        "query": "// Top Policies\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| extend PolicyName = extract(@\"FTNTFGTpolicyname=([^;]+)\",1,AdditionalExtensions)\n| extend PolicyName = iff(isempty(PolicyName), \"Unknown / No Policy Name\", PolicyName)\n| summarize\n    Hits = count(),\n    TrafficGB = round((sum(SentBytes) + sum(ReceivedBytes)) / 1024 / 1024 /1024, 3)\n    by PolicyName\n| order by Hits desc\n| project\n    PolicyName,\n    Hits,\n    TrafficGB\n",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "PolicyName",
+              "formatter": 1,
+              "formatOptions": {
+                "customColumnWidthSetting": "110px"
+              }
+            },
+            {
+              "columnMatch": "Hits",
+              "formatter": 4,
+              "formatOptions": {
+                "max": 1000000,
+                "palette": "blueDark",
+                "customColumnWidthSetting": "70px"
+              }
+            },
+            {
+              "columnMatch": "TrafficGB",
+              "formatter": 4,
+              "formatOptions": {
+                "palette": "redBright",
+                "max": 100,
+                "customColumnWidthSetting": "70px"
+              }
+            }
+          ]
+        },
+        "timeContext": {
+          "durationMs": 172800000
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 5,
+        "h": 10,
+        "x": 9,
+        "y": 127
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 8",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Application /Protocol",
+        "query": "// Counts by table names\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| extend App = extract(@\"FTNTFGTapp=([^;]+)\",1,AdditionalExtensions)\n| where isnotempty(App)\n| summarize Events=count() by App\n| top 5 by Events desc\n",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "piechart",
+        "chartSettings": {
+          "legendSettings": {
+            "position": "right"
+          }
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 10,
+        "x": 0,
+        "y": 127
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 9",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Top Bandwidth Consumers",
+        "query": "// Top Bandwidth Consumers (GB) with Device Name and Source Country\nlet DeviceMap =\nDeviceNetworkEvents\n| where isnotempty(LocalIP)\n| summarize arg_max(TimeGenerated, DeviceName) by SourceIP=LocalIP\n| project SourceIP, DeviceName;\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| extend SourceCountry=extract(@\"FTNTFGTsrccountry=([^;]+)\",1,AdditionalExtensions)\n| extend SourceCountry=iff(isempty(SourceCountry) or SourceCountry == \"Reserved\", \"Internal / Reserved\", SourceCountry)\n| summarize SentGB=round(sum(SentBytes)/1024.0/1024.0/1024.0,3),\n          ReceivedGB=round(sum(ReceivedBytes)/1024.0/1024.0/1024.0,3),\n          TotalGB=round((sum(SentBytes)+sum(ReceivedBytes))/1024.0/1024.0/1024.0,3)\n    by SourceIP, SourceCountry\n| join kind=leftouter DeviceMap on SourceIP\n| extend DeviceName=iff(isempty(DeviceName), \"Unknown / External\", DeviceName)\n| top 10 by TotalGB desc\n| project \n    SourceIP, \n    DeviceName,\n    SourceCountry, \n    SentGB, \n    ReceivedGB, \n    TotalGB\n| order by TotalGB desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "SourceIP",
+              "formatter": 1,
+              "formatOptions": {
+                "customColumnWidthSetting": "95px"
+              }
+            },
+            {
+              "columnMatch": "SentGB",
+              "formatter": 4,
+              "formatOptions": {
+                "palette": "lightBlue",
+                "max": 50,
+                "customColumnWidthSetting": "100px"
+              }
+            },
+            {
+              "columnMatch": "ReceivedGB",
+              "formatter": 4,
+              "formatOptions": {
+                "palette": "green",
+                "max": 100
+              }
+            },
+            {
+              "columnMatch": "TotalGB",
+              "formatter": 4,
+              "formatOptions": {
+                "max": 200,
+                "palette": "redBright"
+              }
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "120px"
+              },
+              "columnMatch": "DeviceName",
+              "formatter": 0
+            },
+            {
+              "columnMatch": "SourceCountry",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "120px"
+              }
+            }
+          ],
+          "labelSettings": [
+            {
+              "columnId": "TotalMB",
+              "label": "TotalTrafficMB"
+            }
+          ],
+          "sortBy": [
+            {
+              "itemKey": "SourceIP",
+              "sortOrder": 1
+            }
+          ]
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 10,
+        "h": 10,
+        "x": 14,
+        "y": 127
+      }
+    },
+    {
+      "type": 1,
+      "name": "text - 12",
+      "content": {
+        "json": "# 🌍 Geographic Traffic & Threat Analysis",
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "resourceIds": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 87
+      }
+    },
+    {
+      "type": 1,
+      "name": "text - 13",
+      "content": {
+        "json": "# 📡 Network Resource Analytics",
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "resourceIds": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 125
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 14",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Top Denied Source Countries",
+        "query": "// Top Denied Source Countries\nlet CountryGeo =\n_GetWatchlist('CountryGeo')\n| project Country=SearchKey,\n          Latitude=todouble(latitude),\n          Longitude=todouble(longitude);\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct == \"Fortigate\"\n| where Activity contains \"deny\" or DeviceAction contains \"deny\"\n| extend Country = extract(@\"FTNTFGTsrccountry=([^;]+)\",1,AdditionalExtensions)\n| where isnotempty(Country)\n| where Country != \"Reserved\"\n| summarize DeniedEvents=count() by Country\n| lookup kind=leftouter CountryGeo on Country\n| where isnotempty(Latitude)\n| where isnotempty(Longitude)\n| order by DeniedEvents desc\n| take 10\n| project Latitude,\n          Longitude,\n          DeniedEvents,\n          Country",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "map",
+        "chartSettings": {
+          "xSettings": {
+            "label": "Country"
+          },
+          "ySettings": {
+            "label": "Denied Traffic"
+          }
+        },
+        "mapSettings": {
+          "locInfo": "LatLong",
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "sizeSettings": "DeniedEvents",
+          "sizeAggregation": "Sum",
+          "labelSettings": "Country",
+          "legendMetric": "DeniedEvents",
+          "itemColorSettings": {
+            "nodeColorField": "DeniedEvents",
+            "colorAggregation": "Sum",
+            "type": "heatmap",
+            "heatmapPalette": "yellowOrangeRed"
+          }
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 12,
+        "h": 12,
+        "x": 12,
+        "y": 89
+      }
+    },
+    {
+      "type": 1,
+      "name": "text - 15",
+      "content": {
+        "json": "# 🔄 Live Traffic Flow",
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "resourceIds": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 112
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 16",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "// Live Traffic Flow\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| extend ActionRaw = extract(@\"FTNTFGTaction=([^;]+)\",1,AdditionalExtensions)\n| extend Action = case(\n    Activity contains \"deny\",\"🔴 Deny\",\n    Activity contains \"accept\",\"🟢 Allow\",\n    Activity contains \"close\",\"🔵 Close\",\n    Activity contains \"server-rst\",\"🟡 Server Reset\",\n    Activity contains \"client-rst\",\"🟠 Client Reset\",\n    Activity contains \"signature\",\"🟣 Signature\",\n    \"⚪ Other\"\n)\n| extend SourceCountry = extract(@\"FTNTFGTsrccountry=([^;]+)\",1,AdditionalExtensions)\n| extend DestinationCountry = extract(@\"FTNTFGTdstcountry=([^;]+)\",1,AdditionalExtensions)\n| extend PolicyName = extract(@\"FTNTFGTpolicyname=([^;]+)\",1,AdditionalExtensions)\n//| extend PolicyID = extract(@\"FTNTFGTpolicyid=([^;]+)\",1,AdditionalExtensions)\n| extend SentGB = round(todouble(SentBytes)/1024.0/1024.0/1024.0,3)\n| extend ReceivedGB = round(todouble(ReceivedBytes)/1024.0/1024.0/1024.0,3)\n| extend TotalTrafficGB = round((todouble(SentBytes)+todouble(ReceivedBytes))/1024.0/1024.0/1024.0,3)\n| project \n    TimeGenerated,\n    Action,\n   // LogSeverity,\n   // PolicyID,\n    PolicyName,\n    SrcIP=SourceIP,\n    SrcPort=SourcePort,\n    SrcCountry=SourceCountry,\n    DstIP=DestinationIP,\n    DstPort=DestinationPort,\n    DstCountry=DestinationCountry,\n    AppProtocol=ApplicationProtocol,\n    Message,\n    SentGB,\n    ReceivedGB,\n    TotalTrafficGB\n| order by TimeGenerated desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "table",
+        "showRefreshButton": true,
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Action",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "operator": "contains",
+                    "sourceColumn": "Action",
+                    "thresholdValue": "Allow",
+                    "representation": "green",
+                    "text": "🟢 Allow"
+                  },
+                  {
+                    "operator": "contains",
+                    "sourceColumn": "Action",
+                    "thresholdValue": "Close",
+                    "representation": "blueDark",
+                    "text": "🔵 Close"
+                  },
+                  {
+                    "operator": "contains",
+                    "sourceColumn": "Action",
+                    "thresholdValue": "Deny",
+                    "representation": "red",
+                    "text": "🔴 Deny"
+                  },
+                  {
+                    "operator": "contains",
+                    "sourceColumn": "Action",
+                    "thresholdValue": "Client Reset",
+                    "representation": "orange",
+                    "text": "🟠 Client Reset"
+                  },
+                  {
+                    "operator": "contains",
+                    "sourceColumn": "Action",
+                    "thresholdValue": "Server Reset",
+                    "representation": "yellow",
+                    "text": "🟡 Server Reset"
+                  },
+                  {
+                    "operator": "contains",
+                    "sourceColumn": "Action",
+                    "thresholdValue": "Signature",
+                    "representation": "amethyst",
+                    "text": "🟣 Signature"
+                  },
+                  {
+                    "operator": "contains",
+                    "sourceColumn": "Action",
+                    "thresholdValue": "Other",
+                    "text": "⚪ Other"
+                  },
+                  {
+                    "operator": "Default"
+                  }
+                ]
+              }
+            },
+            {
+              "columnMatch": "TimeGenerated",
+              "formatter": 6,
+              "formatOptions": {
+                "customColumnWidthSetting": "160px"
+              }
+            },
+            {
+              "columnMatch": "Amount",
+              "formatter": 0
+            },
+            {
+              "columnMatch": "DestinationPort",
+              "formatter": 1,
+              "formatOptions": {
+                "customColumnWidthSetting": "100px"
+              }
+            },
+            {
+              "columnMatch": "DestinationIP",
+              "formatter": 1,
+              "formatOptions": {
+                "customColumnWidthSetting": "100px"
+              }
+            },
+            {
+              "columnMatch": "PolicyName",
+              "formatter": 1,
+              "formatOptions": {
+                "customColumnWidthSetting": "150px"
+              }
+            },
+            {
+              "columnMatch": "Message",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "operator": "contains",
+                    "sourceColumn": "Message",
+                    "thresholdValue": "Connection Failed",
+                    "representation": "redBright",
+                    "text": "Connection Failed"
+                  },
+                  {
+                    "operator": "Default"
+                  }
+                ],
+                "customColumnWidthSetting": "180px"
+              }
+            },
+            {
+              "columnMatch": "TotalTrafficGB",
+              "formatter": 4,
+              "formatOptions": {
+                "palette": "redBright",
+                "max": 200
+              }
+            },
+            {
+              "columnMatch": "SourceCountry",
+              "formatter": 1,
+              "formatOptions": {
+                "customColumnWidthSetting": "90px"
+              }
+            },
+            {
+              "columnMatch": "SentGB",
+              "formatter": 4,
+              "formatOptions": {
+                "palette": "lightBlue",
+                "max": 100,
+                "customColumnWidthSetting": "100px"
+              }
+            },
+            {
+              "columnMatch": "ReceivedGB",
+              "formatter": 4,
+              "formatOptions": {
+                "palette": "green",
+                "max": 100,
+                "customColumnWidthSetting": "100px"
+              }
+            },
+            {
+              "columnMatch": "TotalTrafficGB",
+              "formatter": 0
+            },
+            {
+              "columnMatch": "SrcPort",
+              "formatter": 1,
+              "formatOptions": {
+                "customColumnWidthSetting": "70px"
+              }
+            },
+            {
+              "columnMatch": "SrcCountry",
+              "formatter": 1,
+              "formatOptions": {
+                "customColumnWidthSetting": "80px"
+              }
+            },
+            {
+              "columnMatch": "DstIP",
+              "formatter": 1,
+              "formatOptions": {
+                "customColumnWidthSetting": "100px"
+              }
+            },
+            {
+              "columnMatch": "DstPort",
+              "formatter": 1
+            },
+            {
+              "columnMatch": "DstCountry",
+              "formatter": 1,
+              "formatOptions": {
+                "customColumnWidthSetting": "80px"
+              }
+            },
+            {
+              "columnMatch": "AppProtocol",
+              "formatter": 1
+            },
+            {
+              "formatOptions": {
+                "customColumnWidthSetting": "100px"
+              },
+              "columnMatch": "SrcIP",
+              "formatter": 0
+            }
+          ],
+          "sortBy": [
+            {
+              "itemKey": "TimeGenerated",
+              "sortOrder": 1
+            }
+          ]
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 11,
+        "x": 0,
+        "y": 114
+      }
+    },
+    {
+      "type": 1,
+      "name": "text - 17",
+      "content": {
+        "json": "# ⚙️ Administration Monitoring",
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "resourceIds": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 101
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 18",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "System Health Monitoring",
+        "query": "//System Health Monitoring\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where Activity == \"event:system\"\n| extend Memory=todouble(extract(@\"FTNTFGTmem=([^;]+)\",1,AdditionalExtensions))\n| extend Sessions=todouble(extract(@\"FTNTFGTtotalsession=([^;]+)\",1,AdditionalExtensions))\n| project TimeGenerated, Memory, Sessions\n| order by TimeGenerated asc\n",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "visualization": "timechart",
+        "chartSettings": {
+          "xAxis": "TimeGenerated",
+          "xSettings": {
+            "label": "Event Time"
+          },
+          "legendSettings": {
+            "position": "bottom",
+            "sortOrder": 2
+          },
+          "showMetrics": true,
+          "ySettings": {
+            "label": "Memory Utilization (%)"
+          },
+          "yAxis": [
+            "Memory",
+            "Sessions"
+          ],
+          "showLegend": false,
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Memory",
+              "color": "green"
+            },
+            {
+              "seriesName": "Sessions",
+              "color": "yellowDark"
+            }
+          ]
+        },
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "aggregation": 3
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 9,
+        "x": 0,
+        "y": 103
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 19",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "// Firewall Uptime (Days)\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where Activity == \"event:system\"\n| extend SysUptimeSec=todouble(extract(@\"FTNTFGTsysuptime=([^;]+)\",1,AdditionalExtensions))\n| where isnotempty(SysUptimeSec)\n| summarize arg_max(TimeGenerated, SysUptimeSec)\n| extend UptimeDays=round(SysUptimeSec/86400,2)\n| project UptimeDays\n",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "tagText": "Firewall Uptime (Days)",
+          "tagTextPosition": "bottom",
+          "valueFontStyle": "xLarge",
+          "colorSettings": {
+            "mode": "background",
+            "type": "static",
+            "staticColor": "greenDarkDark"
+          }
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 5,
+        "x": 18,
+        "y": 9
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 20",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "// Active Sessions\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where Activity == \"event:system\"\n| extend ActiveSessions=todouble(extract(@\"FTNTFGTtotalsession=([^;]+)\",1,AdditionalExtensions))\n| where isnotempty(ActiveSessions)\n| summarize arg_max(TimeGenerated, ActiveSessions)\n| project ActiveSessions",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "tagText": "Active Sessions",
+          "tagTextPosition": "bottom",
+          "valueFontStyle": "xLarge",
+          "colorSettings": {
+            "mode": "background",
+            "type": "static",
+            "heatmapPalette": "amethyst",
+            "heatmapMax": 1,
+            "staticColor": "amethyst"
+          }
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 5,
+        "x": 6,
+        "y": 9
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 23",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Most Denied Protocols",
+        "query": "// Most Denied Application Protocols\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| extend FortiAction=extract(@\"FTNTFGTaction=([^;]+)\",1,AdditionalExtensions)\n| where Activity has \"deny\" or FortiAction =~ \"deny\"\n| extend AppProtocol=coalesce(ApplicationProtocol,extract(@\"FTNTFGTapp=([^;]+)\",1,AdditionalExtensions),extract(@\"FTNTFGTservice=([^;]+)\",1,AdditionalExtensions),strcat(\"tcp/\",tostring(DestinationPort)),\"Unknown\")\n| extend AppProtocol=iff(isempty(AppProtocol) or AppProtocol == \"-\", \"Unknown\", AppProtocol)\n| summarize DeniedEvents=count() by AppProtocol\n| top 5 by DeniedEvents desc\n| order by DeniedEvents desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "visualization": "tiles",
+        "tileSettings": {
+          "titleContent": {
+            "columnMatch": "AppProtocol",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "DeniedEvents",
+            "formatter": 12,
+            "formatOptions": {
+              "palette": "categorical"
+            }
+          },
+          "showBorder": false
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 3,
+        "h": 10,
+        "x": 6,
+        "y": 127
+      }
+    },
+    {
+      "type": 1,
+      "name": "text - 25",
+      "content": {
+        "json": "# 📊 Executive Security Summary",
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "resourceIds": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": false,
+        "borderStyle": "[dashed | dotted]",
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 2,
+        "padding": "5px"
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 26",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "CommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| summarize TotalEvents=count()",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "valueFontStyle": "xLarge",
+          "tagTextPosition": "bottom",
+          "tagText": "Total Events",
+          "colorSettings": {
+            "mode": "background",
+            "type": "static",
+            "heatmapPalette": "lightBlue",
+            "staticColor": "lightBlue"
+          },
+          "valueAggregation": "Sum",
+          "iconSettings": {
+            "thresholdsGrid": [
+              {
+                "operator": "Default",
+                "representation": ""
+              }
+            ]
+          }
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 5,
+        "x": 0,
+        "y": 4
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 27",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "CommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| extend Action = extract(@\"FTNTFGTaction=([^;]+)\", 1, AdditionalExtensions)\n| where Action =~ \"accept\"\n| summarize AllowedTraffic=count()",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "valueFontStyle": "xLarge",
+          "tagTextPosition": "bottom",
+          "colorSettings": {
+            "mode": "background",
+            "type": "static",
+            "staticColor": "green"
+          },
+          "tagText": "Allowed Traffic"
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 5,
+        "x": 12,
+        "y": 4
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 28",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "CommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| extend Action = extract(@\"FTNTFGTaction=([^;]+)\", 1, AdditionalExtensions)\n| where Action =~ \"deny\"\n| summarize BlockedTraffic=count()",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "tagText": "Blocked Traffic",
+          "tagTextPosition": "bottom",
+          "valueFontStyle": "xLarge",
+          "colorSettings": {
+            "mode": "background",
+            "type": "static",
+            "staticColor": "redBright"
+          },
+          "iconSettings": {
+            "thresholdsGrid": [
+              {
+                "operator": "Default",
+                "representation": ""
+              }
+            ]
+          }
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 5,
+        "x": 18,
+        "y": 4
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 29",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "CommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory in (\"utm:ips\",\"utm:webfilter\")\n| summarize ThreatsBlocked=count()",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "tagText": "Threats Blocked",
+          "tagTextPosition": "bottom",
+          "valueFontStyle": "xLarge",
+          "colorSettings": {
+            "mode": "background",
+            "type": "static",
+            "staticColor": "orange"
+          },
+          "iconSettings": {
+            "thresholdsGrid": [
+              {
+                "operator": "Default",
+                "representation": ""
+              }
+            ]
+          }
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 5,
+        "x": 0,
+        "y": 9
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 32",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "UTM Activity Trend (MB)",
+        "query": "//UTM Activity Trend (MB)\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory startswith \"utm:\"\n| extend UTMModule = case(\n    DeviceEventCategory == \"utm:app-ctrl\", \"Application Control\",\n    DeviceEventCategory == \"utm:webfilter\", \"Web Filter\",\n    DeviceEventCategory == \"utm:dns\", \"DNS Filter\",\n    DeviceEventCategory == \"utm:ssl\", \"SSL Inspection\",\n    DeviceEventCategory == \"utm:ips\", \"IPS\",\n    DeviceEventCategory == \"utm:virus\", \"Antivirus\",\n    \"Other UTM Modules\"\n)\n| extend EstimatedBytes = strlen(tostring(pack_all()))\n| summarize\n    LogCount = count(),\n    ApproxMB = round(sum(EstimatedBytes) / 1024.0 / 1024.0, 3)\nby UTMModule\n| order by ApproxMB desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "categoricalbar",
+        "chartSettings": {
+          "yAxis": [
+            "ApproxMB"
+          ],
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Application Control",
+              "color": "blue"
+            },
+            {
+              "seriesName": "SSL Inspection",
+              "color": "purple"
+            },
+            {
+              "seriesName": "IPS",
+              "color": "redBright"
+            },
+            {
+              "seriesName": "Web Filter",
+              "color": "orange"
+            }
+          ],
+          "xSettings": {
+            "label": "Events "
+          },
+          "ySettings": {
+            "label": "Threat Count (MB)"
+          }
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 7,
+        "h": 8,
+        "x": 11,
+        "y": 48
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 33",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Threat Severity Breakdown",
+        "query": "// IPS Threat Severity Breakdown\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:ips\"\n| extend Severity = extract(@\"FTNTFGTseverity=([^;]+)\", 1, AdditionalExtensions)\n| summarize Events=count() by Severity\n| order by Events desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "categoricalbar",
+        "chartSettings": {
+          "ySettings": {
+            "label": "Threat Count"
+          },
+          "xSettings": {
+            "label": "Threat Level"
+          },
+          "seriesLabelSettings": [
+            {
+              "seriesName": "high",
+              "color": "redBright"
+            },
+            {
+              "seriesName": "critical",
+              "color": "redDark"
+            },
+            {
+              "seriesName": "medium",
+              "color": "orange"
+            },
+            {
+              "seriesName": "low",
+              "color": "yellow"
+            }
+          ],
+          "tooltipSettings": {
+            "position": "nearest",
+            "mode": "nearest",
+            "axis": "xy"
+          },
+          "legendSettings": {
+            "position": "bottom"
+          }
+        },
+        "showRefreshButton": true
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 5,
+        "h": 10,
+        "x": 7,
+        "y": 36
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 34",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Log Volume Distribution",
+        "query": "// Log Volume Distribution\nlet TotalEstimatedBytes =\ntoscalar(\n    CommonSecurityLog\n    | where DeviceVendor == \"Fortinet\"\n    | extend EstimatedBytes = strlen(tostring(pack_all()))\n    | summarize sum(EstimatedBytes)\n);\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| extend Category = tostring(split(Activity, \":\")[0])\n| extend EstimatedBytes = strlen(tostring(pack_all()))\n| summarize\n    EstimatedDataGB = round(sum(EstimatedBytes) / 1024.0 / 1024.0 / 1024.0, 2),\n    CategoryBytes = sum(EstimatedBytes)\nby Category\n| extend PercentageValue = round((todouble(CategoryBytes) * 100.0) / TotalEstimatedBytes, 2)\n| project Category, PercentageValue, EstimatedDataGB\n| order by PercentageValue desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "piechart",
+        "chartSettings": {
+          "xAxis": "Category",
+          "yAxis": [
+            "PercentageValue"
+          ],
+          "seriesLabelSettings": [
+            {
+              "seriesName": "traffic",
+              "color": "lightBlue"
+            },
+            {
+              "seriesName": "utm",
+              "color": "purple"
+            },
+            {
+              "seriesName": "event",
+              "color": "turquoise"
+            }
+          ],
+          "ySettings": {
+            "numberFormatSettings": {
+              "unit": 1,
+              "options": {
+                "style": "decimal"
+              }
+            }
+          }
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 8,
+        "x": 0,
+        "y": 48
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 35",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Log Storage Utilization (GB)",
+        "query": "let TotalEstimatedBytes =\ntoscalar(\n    CommonSecurityLog\n    | where DeviceVendor == \"Fortinet\"\n    | extend EstimatedBytes = strlen(tostring(pack_all()))\n    | summarize sum(EstimatedBytes)\n);\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| extend Category = tostring(split(Activity, \":\")[0])\n| extend EstimatedBytes = strlen(tostring(pack_all()))\n| summarize\n    EstimatedDataGB = round(sum(EstimatedBytes) / 1024.0 / 1024.0 / 1024.0, 3)\nby Category\n| project Category, EstimatedDataGB\n| order by EstimatedDataGB desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "categoricalbar"
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 5,
+        "h": 8,
+        "x": 6,
+        "y": 48
+      }
+    },
+    {
+      "type": 1,
+      "name": "text - 36",
+      "content": {
+        "json": "# 📊 Security Data Consumption & Analytics",
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "resourceIds": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 46
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 37",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Event Activity Trend (Count)",
+        "query": "// Event Activity Trend\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory startswith \"event:\"\n| extend EventType = extract(@\"FTNTFGTsubtype=([^;]+)\", 1, AdditionalExtensions)\n| summarize EventCount=count() by EventType\n| order by EventCount desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "barchart",
+        "chartSettings": {
+          "xSettings": {
+            "label": "Events"
+          },
+          "ySettings": {
+            "label": "Threat Count"
+          },
+          "seriesLabelSettings": [
+            {
+              "seriesName": "system",
+              "color": "blue"
+            },
+            {
+              "seriesName": "security-rating",
+              "color": "orange"
+            },
+            {
+              "seriesName": "vpn",
+              "color": "green"
+            },
+            {
+              "seriesName": "user",
+              "color": "purple"
+            }
+          ]
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 8,
+        "x": 18,
+        "y": 48
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 38",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Top Applications in Use ",
+        "query": "// Top Applications in Use \nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:app-ctrl\"\n| extend Application = extract(@\"FTNTFGTapp=([^;]+)\", 1, AdditionalExtensions)\n| where isnotempty(Application)\n| summarize ApplicationEvents = count() by Application\n| top 10 by ApplicationEvents desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "barchart"
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 8,
+        "h": 8,
+        "x": 12,
+        "y": 58
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 40",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "SSL Event Type Distribution",
+        "query": "// SSL Event Type Distribution\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:ssl\"\n| extend SSLSubtype = extract(@\"FTNTFGTeventsubtype=([^;]+)\",1,AdditionalExtensions)\n| where isnotempty(SSLSubtype)\n| summarize Events=count() by SSLSubtype\n| order by Events desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "barchart"
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 8,
+        "h": 9,
+        "x": 0,
+        "y": 68
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 41",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "TLS Version Usage",
+        "query": "// TLS Version Usage\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:ssl\"\n| extend TLSVersion = extract(@\"FTNTFGTtlsver=([^;]+)\", 1, AdditionalExtensions)\n| summarize Events=count() by TLSVersion",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "piechart",
+        "chartSettings": {
+          "legendSettings": {
+            "position": "right"
+          }
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 9,
+        "x": 14,
+        "y": 68
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 42",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Prevention Actions",
+        "query": "// IPS Prevention Actions\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:ips\"\n| extend Action = extract(@\"FTNTFGTaction=([^;]+)\", 1, AdditionalExtensions)\n| summarize Events=count() by Action\n| order by Events desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "tiles"
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 3,
+        "h": 3,
+        "x": 18,
+        "y": 36
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 43",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Web Filtering Actions",
+        "query": "// Web Filtering Actions\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:webfilter\"\n| extend Action = extract(@\"FTNTFGTaction=([^;]+)\", 1, AdditionalExtensions)\n| summarize Events=count() by Action\n| order by Events desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "tiles"
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 3,
+        "h": 4,
+        "x": 21,
+        "y": 79
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 44",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Top Blocked Services",
+        "query": "// Top Blocked Services\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:webfilter\"\n| extend Action = extract(@\"FTNTFGTaction=([^;]+)\", 1, AdditionalExtensions)\n| extend Hostname = extract(@\"FTNTFGThostname=([^;]+)\", 1, AdditionalExtensions)\n| where Action == \"blocked\"\n| where isnotempty(Hostname)\n| summarize Events=count() by Hostname\n| top 10 by Events desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "barchart"
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 8,
+        "h": 8,
+        "x": 7,
+        "y": 79
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 45",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Web Filtering Service Errors",
+        "query": "// Web Filtering Service Errors\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:webfilter\"\n| extend ErrorType = extract(@\"FTNTFGTerror=([^;]+)\",1,AdditionalExtensions)\n| where isnotempty(ErrorType)\n| summarize Events=count() by ErrorType\n| order by Events desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "categoricalbar"
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 8,
+        "x": 15,
+        "y": 79
+      }
+    },
+    {
+      "type": 1,
+      "name": "text - 46",
+      "content": {
+        "json": "# 📱 Application Visibility & Usage",
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "resourceIds": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 56
+      }
+    },
+    {
+      "type": 1,
+      "name": "text - 47",
+      "content": {
+        "json": "# 🔐 SSL Visibility & Inspection",
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "resourceIds": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 66
+      }
+    },
+    {
+      "type": 1,
+      "name": "text - 49",
+      "content": {
+        "json": "# 🌎 Web Security Monitoring",
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "resourceIds": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 77
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 50",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Application Categories",
+        "query": "// Application Categories\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:app-ctrl\"\n| extend AppCategory = extract(@\"FTNTFGTappcat=([^;]+)\", 1, AdditionalExtensions)\n| where isnotempty(AppCategory)\n| summarize Events=count() by AppCategory\n| top 10 by Events desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Cloud.IT",
+              "color": "blueDark"
+            },
+            {
+              "seriesName": "Collaboration",
+              "color": "purple"
+            },
+            {
+              "seriesName": "Update",
+              "color": "green"
+            },
+            {
+              "seriesName": "Web.Client",
+              "color": "orange"
+            },
+            {
+              "seriesName": "Network.Service",
+              "color": "turquoise"
+            },
+            {
+              "seriesName": "General.Interest",
+              "color": "grayBlue"
+            }
+          ]
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 8,
+        "x": 6,
+        "y": 58
+      }
+    },
+    {
+      "type": 1,
+      "name": "text - 53",
+      "content": {
+        "json": "# 🚨 IPS Threat Detection & Analysis",
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "resourceIds": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ]
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 24,
+        "h": 2,
+        "x": 0,
+        "y": 34
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 55",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Threat Detection Over Time",
+        "query": "// IPS Threat Detection Over Time\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:ips\"\n| extend Severity = extract(@\"FTNTFGTseverity=([^;]+)\",1,AdditionalExtensions)\n| summarize ThreatEvents=count() by bin(TimeGenerated, 1h), Severity\n| order by TimeGenerated asc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "timechart",
+        "chartSettings": {
+          "xSettings": {
+            "label": "Event Time"
+          },
+          "ySettings": {
+            "label": "Event Count"
+          }
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 7,
+        "h": 10,
+        "x": 0,
+        "y": 36
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 52",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Attack Signature Breakdown",
+        "query": "//IPS Attack Signature Breakdown\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:ips\"\n| extend ThreatSignature = extract(@\"FTNTFGTattack=([^;]+)\",1,AdditionalExtensions)\n| where isnotempty(ThreatSignature)\n| extend ThreatCategory =\n    case(\n        ThreatSignature contains \"SQL\", \"SQL Injection\",\n        ThreatSignature contains \"XSS\", \"Cross-Site Scripting\",\n        ThreatSignature contains \"Botnet\", \"Botnet\",\n        ThreatSignature contains \"Command\", \"Command Injection\",\n        ThreatSignature contains \"Traversal\", \"Path Traversal\",\n        ThreatSignature contains \"Remote.Code.Execution\" or ThreatSignature contains \"RCE\", \"RCE\",\n        ThreatSignature contains \"Unauthorized.Access\", \"Unauthorized Access\",\n        ThreatSignature contains \"Information.Disclosure\", \"Information Disclosure\",\n        ThreatSignature contains \"HTPasswd\", \"Credential Exposure\",\n        ThreatSignature contains \"Exploit\", \"Exploit Attempt\",\n        \"Other\"\n    )\n| summarize Events=count() by ThreatCategory\n| order by Events desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "barchart"
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 10,
+        "x": 12,
+        "y": 36
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 53",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Top Prevented IPS Threats",
+        "query": "// Top Prevented IPS Threats\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:ips\"\n| extend Action = extract(@\"FTNTFGTaction=([^;]+)\",1,AdditionalExtensions)\n| extend ThreatSignature = extract(@\"FTNTFGTattack=([^;]+)\",1,AdditionalExtensions)\n| where Action in (\"dropped\",\"blocked\",\"reset\",\"quarantine\")\n| where isnotempty(ThreatSignature)\n| summarize Events=count() by ThreatSignature\n| top 10 by Events desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "barchart"
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 7,
+        "x": 18,
+        "y": 39
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 53",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Top SSL-Affected Hosts",
+        "query": "// Top SSL-Affected Hosts\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:ssl\"\n| extend Hostname = extract(@\"FTNTFGThostname=([^;]+)\",1,AdditionalExtensions)\n| where isnotempty(Hostname)\n| summarize Events=count() by Hostname\n| top 10 by Events desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "piechart",
+        "chartSettings": {
+          "legendSettings": {
+            "position": "right"
+          }
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 9,
+        "x": 8,
+        "y": 68
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 54",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Prevention Rate %",
+        "query": "// IPS Prevention Rate\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:ips\"\n| extend Action = extract(@\"FTNTFGTaction=([^;]+)\",1,AdditionalExtensions)\n| summarize\n    TotalThreats = count(),\n    PreventedThreats = countif(Action in (\"dropped\",\"blocked\",\"reset\",\"quarantine\"))\n| extend PreventionRate = round((todouble(PreventedThreats) / todouble(TotalThreats)) * 100, 2)\n| project PreventionRate",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "colorSettings": {
+            "mode": "background",
+            "type": "heatmap",
+            "heatmapPalette": "yellowOrangeRed",
+            "heatmapMax": 100,
+            "heatmapMin": 0
+          },
+          "tagTextPosition": "bottom"
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 3,
+        "h": 3,
+        "x": 21,
+        "y": 36
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 55",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "// Closed Traffic\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| extend Action = extract(@\"FTNTFGTaction=([^;]+)\", 1, AdditionalExtensions)\n| where Action =~ \"close\"\n| summarize AllowedTraffic=count()",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "tagText": "Closed Traffic",
+          "tagTextPosition": "bottom",
+          "colorSettings": {
+            "mode": "background",
+            "type": "static",
+            "heatmapPalette": "turquoise",
+            "staticColor": "turquoise"
+          },
+          "valueFontStyle": "xLarge"
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 5,
+        "x": 6,
+        "y": 4
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 56",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Top Blocked Applications",
+        "query": "// Top Blocked Applications\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:app-ctrl\"\n| extend Action = extract(@\"FTNTFGTaction=([^;]+)\",1,AdditionalExtensions)\n| extend Application = extract(@\"FTNTFGTapp=([^;]+)\",1,AdditionalExtensions)\n| where Action in (\"block\",\"deny\",\"dropped\")\n| where isnotempty(Application)\n| summarize BlockedEvents=count() by Application\n| top 10 by BlockedEvents desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "categoricalbar"
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 4,
+        "h": 8,
+        "x": 20,
+        "y": 58
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 57",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Application Security Actions",
+        "query": "// Application Security Actions\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:app-ctrl\"\n| extend Action = extract(@\"FTNTFGTaction=([^;]+)\",1,AdditionalExtensions)\n| summarize Events=count() by Action\n| order by Events desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "piechart",
+        "chartSettings": {
+          "legendSettings": {
+            "position": "right"
+          },
+          "seriesLabelSettings": [
+            {
+              "seriesName": "pass",
+              "label": "Pass",
+              "color": "green"
+            },
+            {
+              "seriesName": "block",
+              "color": "orange",
+              "label": "Block"
+            },
+            {
+              "seriesName": "deny",
+              "label": "Deny",
+              "color": "redBright"
+            },
+            {
+              "seriesName": "drop",
+              "label": "Drop",
+              "color": "redDark"
+            }
+          ]
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 8,
+        "x": 0,
+        "y": 58
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 58",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Traffic Bypassing SSL Inspection",
+        "query": "// Traffic Bypassing SSL Inspection\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where DeviceEventCategory == \"utm:ssl\"\n| extend SSLProfile = extract(@\"FTNTFGTprofile=([^;]+)\",1,AdditionalExtensions)\n| where isnotempty(SSLProfile)\n| summarize Events=count() by SSLProfile\n| order by Events desc\n",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "tiles"
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 4,
+        "h": 5,
+        "x": 20,
+        "y": 68
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 58",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "SSL Bypass Rate %",
+        "query": "// SSL Bypass Rate %\nCommonSecurityLog\n| where DeviceEventCategory == \"utm:ssl\"\n| extend SSLProfile = extract(@\"FTNTFGTprofile=([^;]+)\",1,AdditionalExtensions)\n| summarize\n    Total=count(),\n    Uninspected=countif(SSLProfile==\"no-inspection\")\n| extend BypassRate=round((todouble(Uninspected)/Total)*100,2)\n| project BypassRate",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "colorSettings": {
+            "mode": "background",
+            "type": "heatmap",
+            "heatmapMin": 0,
+            "heatmapMax": 100,
+            "heatmapPalette": "yellowOrangeRed"
+          },
+          "tagTextPosition": "bottom"
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 4,
+        "h": 4,
+        "x": 20,
+        "y": 73
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 59",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "Top Accessed Cloud Services",
+        "query": "// Top Accessed Cloud Services\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| extend Hostname = extract(@\"FTNTFGThostname=([^;]+)\",1,AdditionalExtensions)\n| where isnotempty(Hostname)\n| summarize Visits=count() by Hostname\n| top 10 by Visits desc",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "barchart"
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 7,
+        "h": 8,
+        "x": 0,
+        "y": 79
+      }
+    },
+    {
+      "type": 3,
+      "name": "logs query - 57",
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "",
+        "query": "// Peak Sessions\nCommonSecurityLog\n| where DeviceVendor == \"Fortinet\"\n| where DeviceProduct =~ \"Fortigate\"\n| where Activity == \"event:system\"\n| extend Sessions=todouble(extract(@\"FTNTFGTtotalsession=([^;]+)\",1,AdditionalExtensions))\n| where isnotempty(Sessions)\n| summarize PeakSessions=max(Sessions)",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+        ],
+        "timeContextFromParameter": "TimeRange",
+        "visualization": "stat",
+        "statSettings": {
+          "valueFontStyle": "xLarge",
+          "tagTextPosition": "bottom",
+          "colorSettings": {
+            "mode": "background",
+            "type": "static",
+            "staticColor": "purpleDark"
+          },
+          "tagText": "Peak Sessions"
+        }
+      },
+      "styleSettings": {
+        "showBorder": true,
+        "borderStyle": "light thick",
+        "w": 6,
+        "h": 5,
+        "x": 12,
+        "y": 9
+      }
+    }
+  ],
+  "layout": {
+    "type": "grid"
+  },
+  "styleSettings": {
+    "background": "lighter"
+  },
+  "fallbackResourceIds": [
+    "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

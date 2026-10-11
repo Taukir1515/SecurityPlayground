@@ -1,0 +1,641 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 11,
+      "content": {
+        "version": "LinkItem/1.0",
+        "style": "tabs",
+        "links": [
+          {
+            "id": "9eccf8e8-db73-418c-827c-bdbe7a21a608",
+            "cellValue": "Tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Overview",
+            "subTarget": "Overview",
+            "style": "link"
+          },
+          {
+            "id": "f5ad7687-f463-4031-ab49-be313aae25b0",
+            "cellValue": "Tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Endpoint Security",
+            "subTarget": "Endpoint",
+            "style": "link"
+          }
+        ]
+      },
+      "name": "links - 12"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "name": "TimeRange",
+            "label": "Incident Creation Time",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 7776000000
+            },
+            "id": "8bebeca8-a7a2-4975-b3ab-3b61916727ba"
+          },
+          {
+            "name": "Severity",
+            "type": 2,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "value": [
+              "value::all"
+            ],
+            "typeSettings": {
+              "selectAllValue": "*",
+              "additionalResourceOptions": [
+                "value::all"
+              ]
+            },
+            "query": "SecurityIncident | summarize by Severity | project Value=Severity, Label=Severity",
+            "resourceType": "microsoft.operationalinsights/workspaces",
+            "id": "e5838130-7f18-40c6-aa1a-7199f846c765"
+          },
+          {
+            "name": "Status",
+            "type": 2,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "value": [
+              "value::all"
+            ],
+            "typeSettings": {
+              "selectAllValue": "*",
+              "additionalResourceOptions": [
+                "value::all"
+              ]
+            },
+            "query": "SecurityIncident | summarize by Status | project Value=Status, Label=Status",
+            "resourceType": "microsoft.operationalinsights/workspaces",
+            "id": "7de6ce4f-7883-44ad-9f8e-4be16fa3a0e5"
+          },
+          {
+            "name": "Search",
+            "type": 1,
+            "value": "",
+            "id": "a04f7e70-58f2-4844-9a85-8ba445d9c1ab"
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "Parameters"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "# Endpoint security\n"
+      },
+      "name": "Header"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let BaseData = SecurityIncident\n| where CreatedTime between ({TimeRange:start} .. {TimeRange:end})\n| summarize arg_max(LastModifiedTime, *) by IncidentNumber\n| where ('*' in ({Severity}) or Severity in ({Severity}))\n| where ('*' in ({Status}) or Status in ({Status}))\n| where isempty('{Search}') or Title contains '{Search}';\n\nBaseData\n| summarize Total=count() by Severity",
+        "size": 3,
+        "title": "Incidents by Severity",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Medium",
+              "color": "orange"
+            },
+            {
+              "seriesName": "Low",
+              "color": "yellow"
+            },
+            {
+              "seriesName": "High",
+              "color": "red"
+            },
+            {
+              "seriesName": "Informational",
+              "color": "gray"
+            }
+          ]
+        }
+      },
+      "customWidth": "25",
+      "name": "Incidents by Severity",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let BaseData = SecurityIncident\n| where CreatedTime between ({TimeRange:start} .. {TimeRange:end})\n| summarize arg_max(LastModifiedTime, *) by IncidentNumber\n| where ('*' in ({Severity}) or Severity in ({Severity}))\n| where ('*' in ({Status}) or Status in ({Status}))\n| where isempty('{Search}') or Title contains '{Search}';\n\nBaseData\n| extend SOC_Status=case(Status=='New','Active',Status=='Active','In Progress',Status=='Closed','Resolved',Status)\n| summarize Total=count() by SOC_Status",
+        "size": 3,
+        "title": "Incidents by Status",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Resolved",
+              "color": "greenDark"
+            },
+            {
+              "seriesName": "Active",
+              "color": "redBright"
+            },
+            {
+              "seriesName": "In Progress",
+              "color": "blue"
+            }
+          ]
+        }
+      },
+      "customWidth": "25",
+      "name": "Incidents by Status",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let BaseData = SecurityIncident\n| where CreatedTime between ({TimeRange:start} .. {TimeRange:end})\n| summarize arg_max(LastModifiedTime, *) by IncidentNumber\n| where ('*' in ({Severity}) or Severity in ({Severity}))\n| where ('*' in ({Status}) or Status in ({Status}))\n| where isempty('{Search}') or Title contains '{Search}';\n\nBaseData\n| extend OwnerName=coalesce(tostring(Owner.assignedTo),tostring(Owner.userPrincipalName),tostring(Owner.email),'Unassigned')\n| summarize Total=count() by OwnerName",
+        "size": 3,
+        "title": "Incidents by Owner",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Unassigned",
+              "color": "blueDark"
+            },
+            {
+              "seriesName": "Q SOC",
+              "color": "pink"
+            }
+          ]
+        }
+      },
+      "customWidth": "25",
+      "name": "Incidents by Owner",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let BaseData =\nSecurityIncident\n| where CreatedTime between ({TimeRange:start} .. {TimeRange:end})\n| summarize arg_max(LastModifiedTime, *) by IncidentNumber\n| where ('*' in ({Severity}) or Severity in ({Severity}))\n| where ('*' in ({Status}) or Status in ({Status}))\n| where isempty('{Search}') or Title contains '{Search}';\n\nlet Engineers =\nBaseData\n| extend LabelsSafe = iff(isnull(Labels), dynamic([]), Labels)\n| mv-expand LabelsSafe\n| extend\n    Name = tostring(LabelsSafe.labelName),\n    Type = tostring(LabelsSafe.labelType)\n| where Type == \"User\"\n| summarize Engineer = make_set(Name) by IncidentNumber;\n\nBaseData\n| join kind=leftouter Engineers on IncidentNumber\n| extend WorkingEngineer =\n    iff(\n        isnull(Engineer) or array_length(Engineer) == 0,\n        \"Unassigned\",\n        strcat_array(Engineer, \", \")\n    )\n| summarize Total = count() by WorkingEngineer\n| order by Total desc\n",
+        "size": 3,
+        "title": "Incidents Working Engineer",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart"
+      },
+      "customWidth": "25",
+      "name": "Incidents Working Engineer",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let BaseData = SecurityIncident\n| where CreatedTime between ({TimeRange:start} .. {TimeRange:end})\n| summarize arg_max(LastModifiedTime, *) by IncidentNumber\n| where ('*' in ({Severity}) or Severity in ({Severity}))\n| where ('*' in ({Status}) or Status in ({Status}))\n| where isempty('{Search}') or Title contains '{Search}';\n\nBaseData\n| extend OwnerName = coalesce(\n    tostring(Owner.assignedTo),\n    tostring(Owner.userPrincipalName),\n    tostring(Owner.email),\n    \"Unassigned\"\n)\n\n| extend SOC_Status = case(\n    Status == \"New\",\"Active\",\n    Status == \"Active\",\"In Progress\",\n    Status == \"Closed\",\"Resolved\",\n    Status\n)\n\n| extend SeverityScore = case(\n    Severity == \"High\", 4,\n    Severity == \"Medium\", 3,\n    Severity == \"Low\", 2,\n    Severity == \"Informational\", 1,\n    0\n)\n\n| extend LabelsSafe = iff(isnull(Labels), dynamic([]), Labels)\n\n| mv-apply L = LabelsSafe on (\n    summarize WorkingEngineer = strcat_array(\n        make_set_if(tostring(L.labelName), tostring(L.labelType) == \"User\"),\n        \", \"\n    )\n)\n\n| extend WorkingEngineer = iff(isempty(WorkingEngineer),\"Unassigned\",WorkingEngineer)\n\n| project\n    Severity,\n    SeverityScore,\n    IncidentNumber,\n    Title,\n    Alerts = iff(isnull(AlertIds),0,array_length(AlertIds)),\n    Provider = ProviderName,\n    Created = CreatedTime,\n    Updated = LastModifiedTime,\n    Owner = OwnerName,\n    WorkingEngineer,\n    Status = SOC_Status,\n    ClosingComment = ClassificationComment\n\n| order by Updated desc\n",
+        "size": 0,
+        "title": "Detailed Incident List",
+        "showExportToExcel": true,
+        "exportToExcelOptions": "all",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Severity",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "sourceColumn": "SeverityScore",
+                    "operator": ">=",
+                    "thresholdValue": "4",
+                    "representation": "red",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "sourceColumn": "SeverityScore",
+                    "operator": ">=",
+                    "thresholdValue": "3",
+                    "representation": "orange",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "sourceColumn": "SeverityScore",
+                    "operator": ">=",
+                    "thresholdValue": "2",
+                    "representation": "yellow",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "sourceColumn": "SeverityScore",
+                    "operator": ">=",
+                    "thresholdValue": "1",
+                    "representation": "gray",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "sourceColumn": "SeverityScore",
+                    "operator": "Default",
+                    "thresholdValue": null,
+                    "representation": "lightBlue",
+                    "text": "{0}{1}"
+                  }
+                ]
+              }
+            },
+            {
+              "columnMatch": "SeverityScore",
+              "formatter": 5
+            },
+            {
+              "columnMatch": "Owner",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "operator": "startsWith",
+                    "thresholdValue": "Unassigned",
+                    "representation": "blueDark",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "startsWith",
+                    "thresholdValue": "Q SOC",
+                    "representation": "pink",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "Default",
+                    "thresholdValue": null,
+                    "representation": "lightBlue",
+                    "text": "{0}{1}"
+                  }
+                ]
+              }
+            },
+            {
+              "columnMatch": "Status",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "operator": "startsWith",
+                    "thresholdValue": "Activ",
+                    "representation": "redBright",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "startsWith",
+                    "thresholdValue": "In Progress",
+                    "representation": "blue",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "startsWith",
+                    "thresholdValue": "Resolved",
+                    "representation": "greenDark",
+                    "text": "{0}{1}"
+                  },
+                  {
+                    "operator": "Default",
+                    "thresholdValue": null,
+                    "representation": "lightBlue",
+                    "text": "{0}{1}"
+                  }
+                ]
+              }
+            }
+          ],
+          "rowLimit": 5000,
+          "filter": true,
+          "sortBy": [
+            {
+              "itemKey": "$gen_thresholds_Status_10",
+              "sortOrder": 1
+            }
+          ]
+        },
+        "sortBy": [
+          {
+            "itemKey": "$gen_thresholds_Status_10",
+            "sortOrder": 1
+          }
+        ]
+      },
+      "name": "Detailed Incident List",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityIncident\n| where CreatedTime between ({TimeRange:start} .. {TimeRange:end})\n| extend Tactics = todynamic(AdditionalData[\"tactics\"])\n| mv-expand Tactics\n| summarize Total=count() by Tactic = tostring(Tactics)\n| order by Total desc\n| take 10",
+        "size": 3,
+        "title": "Top Attack Tactics",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "CommandAndControl",
+              "color": "blueDark"
+            },
+            {
+              "seriesName": "Discovery",
+              "color": "pink"
+            },
+            {
+              "seriesName": "Exfiltration",
+              "color": "brown"
+            },
+            {
+              "seriesName": "Persistence",
+              "color": "greenDarkDark"
+            },
+            {
+              "seriesName": "Other",
+              "color": "magenta"
+            },
+            {
+              "seriesName": "CredentialAccess",
+              "color": "orange"
+            },
+            {
+              "seriesName": "Execution",
+              "color": "redBright"
+            }
+          ]
+        }
+      },
+      "customWidth": "25",
+      "name": "Top Attack Tactics",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityAlert\r\n| where TimeGenerated between ({TimeRange:start} .. {TimeRange:end})\r\n| mv-expand todynamic(Entities)\r\n| where Entities.Type == \"host\"\r\n| extend Host = tostring(Entities.HostName)\r\n| where isnotempty(Host)\r\n| summarize TotalAlerts=count() by Host\r\n| order by TotalAlerts desc\r\n| take 10\r\n",
+        "size": 3,
+        "title": "Top Attacked Hosts",
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "tileSettings": {
+          "showBorder": false,
+          "titleContent": {
+            "columnMatch": "Host",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "TotalAlerts",
+            "formatter": 12,
+            "formatOptions": {
+              "palette": "auto"
+            },
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "maximumSignificantDigits": 3,
+                "maximumFractionDigits": 2
+              }
+            }
+          }
+        },
+        "graphSettings": {
+          "type": 0,
+          "topContent": {
+            "columnMatch": "Host",
+            "formatter": 1
+          },
+          "centerContent": {
+            "columnMatch": "TotalAlerts",
+            "formatter": 1,
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "maximumSignificantDigits": 3,
+                "maximumFractionDigits": 2
+              }
+            }
+          }
+        },
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Other",
+              "color": "blueDark"
+            },
+            {
+              "seriesName": "sq-pc-286",
+              "color": "orangeDark"
+            },
+            {
+              "seriesName": "sq-srvfile-002",
+              "color": "purpleDark"
+            },
+            {
+              "seriesName": "sq-pc-443",
+              "color": "greenDark"
+            },
+            {
+              "seriesName": "kinship-vm",
+              "color": "pink"
+            },
+            {
+              "seriesName": "sq-pc-100",
+              "color": "red"
+            },
+            {
+              "seriesName": "sq-pc-260",
+              "color": "gray"
+            }
+          ]
+        },
+        "mapSettings": {
+          "locInfo": "LatLong",
+          "sizeSettings": "TotalAlerts",
+          "sizeAggregation": "Sum",
+          "legendMetric": "TotalAlerts",
+          "legendAggregation": "Sum",
+          "itemColorSettings": {
+            "type": "heatmap",
+            "colorAggregation": "Sum",
+            "nodeColorField": "TotalAlerts",
+            "heatmapPalette": "greenRed"
+          }
+        }
+      },
+      "customWidth": "25",
+      "name": "Top Attacked Hosts",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityAlert\r\n| where TimeGenerated between ({TimeRange:start} .. {TimeRange:end})\r\n| mv-expand todynamic(Entities)\r\n| where Entities.Type == \"ip\"\r\n| extend SrcIP = tostring(Entities.Address)\r\n| where isnotempty(SrcIP)\r\n| summarize TotalAlerts=count() by SrcIP\r\n| order by TotalAlerts desc\r\n| take 10\r\n",
+        "size": 3,
+        "title": "Most Attacking IPs",
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "tileSettings": {
+          "showBorder": false,
+          "titleContent": {
+            "columnMatch": "SrcIP",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "TotalAlerts",
+            "formatter": 12,
+            "formatOptions": {
+              "palette": "auto"
+            },
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "maximumSignificantDigits": 3,
+                "maximumFractionDigits": 2
+              }
+            }
+          }
+        },
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Other",
+              "color": "blueDark"
+            },
+            {
+              "seriesName": "204.76.203.93",
+              "color": "orange"
+            },
+            {
+              "seriesName": "185.132.53.103",
+              "color": "purpleDark"
+            },
+            {
+              "seriesName": "87.120.191.65",
+              "color": "blueDark"
+            },
+            {
+              "seriesName": "81.168.83.103",
+              "color": "turquoise"
+            },
+            {
+              "seriesName": "193.142.146.230",
+              "color": "yellow"
+            },
+            {
+              "seriesName": "89.42.231.200",
+              "color": "turquoise"
+            }
+          ]
+        }
+      },
+      "customWidth": "25",
+      "name": "Most Attacking IPs",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityIncident\r\n| where Status == \"Closed\"\r\n| where CreatedTime between ({TimeRange:start} .. {TimeRange:end})\r\n| extend ResolveTime = datetime_diff(\"minute\", LastModifiedTime, CreatedTime)\r\n| summarize AvgMTTR = avg(ResolveTime) by bin(CreatedTime, 1d)\r\n| order by CreatedTime asc\r\n",
+        "size": 1,
+        "title": "Mean Time To Resolve",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "CreatedTime",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "operator": "Default",
+                    "thresholdValue": null,
+                    "representation": "magenta",
+                    "text": "{0}{1}"
+                  }
+                ]
+              }
+            }
+          ],
+          "sortBy": [
+            {
+              "itemKey": "AvgMTTR",
+              "sortOrder": 1
+            }
+          ]
+        },
+        "sortBy": [
+          {
+            "itemKey": "AvgMTTR",
+            "sortOrder": 1
+          }
+        ]
+      },
+      "customWidth": "25",
+      "name": "Mean Time To Resolve",
+      "styleSettings": {
+        "showBorder": true
+      }
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
