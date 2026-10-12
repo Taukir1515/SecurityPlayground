@@ -1,0 +1,673 @@
+{
+    "version": "Notebook/1.0",
+    "items": [
+        {
+            "type": 12,
+            "name": "group - 2",
+            "content": {
+                "version": "NotebookGroup/1.0",
+                "groupType": "editable",
+                "items": [
+                    {
+                        "type": 3,
+                        "name": "query - 1",
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "union withsource=[\"$TableName\"] *\r\n| where isnotempty(_BilledSize)\r\n| summarize\r\n    LogCount = count(),\r\n    TotalBytes = sum(_BilledSize)\r\n    by TableName=[\"$TableName\"]\r\n| extend StorageGB = round(TotalBytes / 1024.0 / 1024.0 / 1024.0, 2)\r\n| order by StorageGB desc\r\n| project TableName, LogCount, StorageGB",
+                            "size": 0,
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "crossComponentResources": [
+                                "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                            ],
+                            "showRefreshButton": true,
+                            "showExportToExcel": true,
+                            "layers": [],
+                            "visualization": "tiles",
+                            "tileSettings": {
+                                "sortCriteriaField": "TableName",
+                                "sortOrderField": 2,
+                                "showBorder": true,
+                                "titleContent": {
+                                    "columnMatch": "TableName",
+                                    "formatter": 2
+                                },
+                                "subtitleContent": {
+                                    "columnMatch": "LogCount",
+                                    "formatter": 8,
+                                    "formatOptions": {
+                                        "palette": "hotCold"
+                                    }
+                                },
+                                "secondaryContent": {},
+                                "rightContent": {},
+                                "leftContent": {
+                                    "columnMatch": "StorageGB",
+                                    "formatter": 18,
+                                    "formatOptions": {
+                                        "thresholdsOptions": "colors",
+                                        "thresholdsGrid": [
+                                            {
+                                                "operator": "Default",
+                                                "representation": "orange"
+                                            }
+                                        ],
+                                        "showAsTag": true
+                                    }
+                                }
+                            }
+                        },
+                        "showPin": false,
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "light thick",
+                            "x": 0,
+                            "y": 8,
+                            "w": 12,
+                            "h": 11
+                        },
+                        "id": "6c7912e9-a8fe-434e-a235-f2fdc0df3eac"
+                    },
+                    {
+                        "type": 9,
+                        "name": "parameters - 0",
+                        "content": {
+                            "version": "KqlParameterItem/1.0",
+                            "parameters": [
+                                {
+                                    "id": "303470e4-388d-481e-85dd-3a6d8817c7b2",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "TimeRange",
+                                    "label": "Time Range",
+                                    "type": 4,
+                                    "isRequired": true,
+                                    "multiSelect": false,
+                                    "isHiddenWhenLocked": false,
+                                    "typeSettings": {
+                                        "selectableValues": [
+                                            {
+                                                "durationMs": 300000
+                                            },
+                                            {
+                                                "durationMs": 1800000
+                                            },
+                                            {
+                                                "durationMs": 3600000
+                                            },
+                                            {
+                                                "durationMs": 14400000
+                                            },
+                                            {
+                                                "durationMs": 43200000
+                                            },
+                                            {
+                                                "durationMs": 86400000
+                                            },
+                                            {
+                                                "durationMs": 259200000
+                                            },
+                                            {
+                                                "durationMs": 604800000
+                                            },
+                                            {
+                                                "durationMs": 1209600000
+                                            },
+                                            {
+                                                "durationMs": 2592000000
+                                            }
+                                        ],
+                                        "allowCustom": true
+                                    },
+                                    "key": "303470e4-388d-481e-85dd-3a6d8817c7b2",
+                                    "value": {
+                                        "durationMs": 86400000
+                                    }
+                                }
+                            ],
+                            "style": "formHorizontal",
+                            "title": "Time"
+                        },
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "light thick",
+                            "x": 0,
+                            "y": 0,
+                            "w": 24,
+                            "h": 2
+                        },
+                        "conditionalVisibilities": [
+                            {
+                                "parameterName": "all",
+                                "comparison": "isEqualTo",
+                                "value": ""
+                            }
+                        ],
+                        "id": "3cf6b2b9-264e-4d5f-8b8d-99db80b5b620"
+                    },
+                    {
+                        "type": 3,
+                        "name": "query - 2",
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "union withsource=[\"$TableName\"] *\r\n| where isnotempty(_BilledSize)\r\n| extend EventTime = todatetime(column_ifexists(\"TimeGenerated\", datetime(null)))\r\n| where EventTime >= ago(5m)\r\n| summarize LogCount = count()\r\n    by TableName=[\"$TableName\"]\r\n| extend EPS = round(todouble(LogCount) / 300.0, 2)\r\n| order by EPS desc\r\n| project TableName, LogCount, EPS",
+                            "size": 0,
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "crossComponentResources": [
+                                "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                            ],
+                            "visualization": "timechart",
+                            "chartSettings": {
+                                "tooltipSettings": {
+                                    "mode": "point"
+                                },
+                                "ySettings": {
+                                    "scale": "log",
+                                    "label": "Y "
+                                }
+                            },
+                            "showRefreshButton": true,
+                            "noDataMessage": null
+                        },
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "light thick",
+                            "x": 12,
+                            "y": 8,
+                            "w": 12,
+                            "h": 11
+                        },
+                        "id": "e53fcc5c-6ea8-44e6-ae74-1a5550c0995b"
+                    },
+                    {
+                        "type": 3,
+                        "name": "query - 1",
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "union withsource=[\"$TableName\"] *\r\n| where isnotempty(_BilledSize)\r\n| extend EventTime = todatetime(column_ifexists(\"TimeGenerated\", \"\"))\r\n| where EventTime >= ago(15m)\r\n| summarize LogCount = count() by bin(EventTime, 1m)\r\n| extend EPS = round(todouble(LogCount) / 60.0, 2)\r\n| order by EventTime asc\r\n| project EventTime, EPS\r\n| render timechart",
+                            "size": 0,
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "crossComponentResources": [
+                                "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                            ],
+                            "visualization": "timechart",
+                            "chartSettings": {
+                                "showLegend": false,
+                                "seriesLabelSettings": [
+                                    {
+                                        "seriesName": "EPS",
+                                        "color": "yellow"
+                                    }
+                                ],
+                                "tooltipSettings": {
+                                    "mode": "point"
+                                }
+                            },
+                            "color": "turquoise",
+                            "title": "Total Workspace EPS"
+                        },
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "light thick",
+                            "x": 0,
+                            "y": 2,
+                            "w": 24,
+                            "h": 6
+                        },
+                        "id": "7d926aac-15e5-48cf-a180-256de39b33b5"
+                    }
+                ],
+                "loadType": "explicit",
+                "exportParameters": true,
+                "layout": {
+                    "type": "grid"
+                }
+            },
+            "id": "ad7a05d5-1007-426c-b481-f811ea37bca0"
+        },
+        {
+            "type": 3,
+            "name": "query - 1",
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "union withsource=[\"$TableName\"] *\r\n| where isnotempty(_BilledSize)\r\n| summarize\r\n    LogCount = count(),\r\n    TotalBytes = sum(_BilledSize)\r\n    by TableName=[\"$TableName\"]\r\n| extend StorageGB = round(TotalBytes / 1024.0 / 1024.0 / 1024.0, 2)\r\n| order by StorageGB desc\r\n| project TableName, LogCount, StorageGB",
+                "size": 0,
+                "timeContext": {
+                    "durationMs": 2419200000
+                },
+                "queryType": 0,
+                "resourceType": "microsoft.operationalinsights/workspaces",
+                "crossComponentResources": [
+                    "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                ],
+                "visualization": "linechart",
+                "chartSettings": {
+                    "tooltipSettings": {
+                        "mode": "point"
+                    }
+                }
+            },
+            "styleSettings": {
+                "showBorder": true,
+                "borderStyle": "solid"
+            },
+            "id": "e5084dcf-2f5f-49fe-880a-a1530ef3b943"
+        },
+        {
+            "type": 3,
+            "name": "query - 2",
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "union withsource=[\"$TableName\"] *\r\n| where isnotempty(_BilledSize)\r\n| summarize TotalBytes = sum(_BilledSize)\r\n    by bin(TimeGenerated, 1d)\r\n| extend IngestionGB = round(TotalBytes / 1024.0 / 1024.0 / 1024.0, 2)\r\n| order by TimeGenerated asc\r\n| project TimeGenerated, IngestionGB\r\n| render timechart",
+                "size": 0,
+                "timeContext": {
+                    "durationMs": 7776000000
+                },
+                "queryType": 0,
+                "resourceType": "microsoft.operationalinsights/workspaces",
+                "crossComponentResources": [
+                    "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                ],
+                "visualization": "table",
+                "title": "Ingestion Volume (Daily)"
+            },
+            "id": "c049668b-bef5-4802-8248-bf024540a591"
+        },
+        {
+            "type": 3,
+            "name": "query - 3",
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "union withsource=[\"$TableName\"] *\r\n| where isnotempty(_BilledSize)\r\n| summarize TotalBytes = sum(_BilledSize)\r\n    by TableName=[\"$TableName\"]\r\n| extend IngestionGB = round(TotalBytes / 1024.0 / 1024.0 / 1024.0, 2)\r\n| top 15 by IngestionGB desc\r\n| project TableName, IngestionGB\r\n| render barchart",
+                "size": 0,
+                "timeContext": {
+                    "durationMs": 86400000
+                },
+                "queryType": 0,
+                "resourceType": "microsoft.operationalinsights/workspaces",
+                "crossComponentResources": [
+                    "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                ],
+                "visualization": "piechart",
+                "title": "Ingestion By Storage "
+            },
+            "id": "d1bccd3b-dbe1-4e74-88f1-69e05714cd41"
+        },
+        {
+            "type": 3,
+            "name": "query - 4",
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "union\r\n    DeviceEvents,\r\n    DeviceProcessEvents,\r\n    DeviceNetworkEvents,\r\n    DeviceFileEvents\r\n| where isnotempty(_BilledSize)\r\n| where isnotempty(DeviceName)\r\n| summarize\r\n    LogCount = count(),\r\n    TotalBytes = sum(_BilledSize)\r\n    by DeviceName\r\n| extend GBytesUsed = TotalBytes / 1024.0 / 1024.0 / 1024.0\r\n| order by GBytesUsed desc\r\n| project DeviceName, GBytesUsed, LogCount",
+                "size": 0,
+                "timeContext": {
+                    "durationMs": 86400000
+                },
+                "queryType": 0,
+                "resourceType": "microsoft.operationalinsights/workspaces",
+                "crossComponentResources": [
+                    "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                ],
+                "visualization": "linechart",
+                "title": "Log ingestion by Device "
+            },
+            "id": "6d2961fa-f79a-4af9-82d7-0d5c382072f7"
+        },
+        {
+            "type": 3,
+            "name": "query - 5",
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "datatable(\r\n    Name:string,\r\n    Workspace:string,\r\n    OS:string,\r\n    Streams:string,\r\n    xPath:string,\r\n    Location:string,\r\n    SyslogFacilities:string\r\n)\r\n[\r\n    \"MSVMI-DefaultWorkspace-b59c7639-06aa-4045-ae41-3ab12e354e9a-EUS\",\r\n    \"DefaultWorkspace-b59c7639-06aa-4045-ae41-3ab12e354e9a-EUS\",\r\n    \"Linux\",\r\n    \"Microsoft-InsightsMetrics\",\r\n    \"\",\r\n    \"eastus\",\r\n    \"\",\r\n\r\n    \"Common_Event_Format_Fortinet_Firewalls\",\r\n    \"q-sentinel\",\r\n    \"Linux\",\r\n    \"Microsoft-CommonSecurityLog\",\r\n    \"\",\r\n    \"eastus\",\r\n    \"\",\r\n\r\n    \"Linux_Syslog_Events\",\r\n    \"q-sentinel\",\r\n    \"Linux\",\r\n    \"Microsoft-Syslog\",\r\n    \"\",\r\n    \"eastus\",\r\n    \"alert,audit,auth,authpriv,cron,daemon,clock,ftp,kern,local0-local7,lpr,mail,news,ntp,syslog,user,uucp,nopri\",\r\n\r\n    \"Cisco_Firewalls_Syslog\",\r\n    \"q-sentinel\",\r\n    \"Linux\",\r\n    \"Microsoft-Syslog\",\r\n    \"\",\r\n    \"eastus\",\r\n    \"alert,audit,auth,authpriv,cron,daemon,clock,ftp,kern,local0-local7,lpr,mail,news,ntp,syslog,user,uucp,nopri\",\r\n\r\n    \"Window_Security_Events_Via_AMA\",\r\n    \"q-sentinel\",\r\n    \"Windows\",\r\n    \"Microsoft-SecurityEvent\",\r\n    \"Security!*,Microsoft-Windows-AppLocker/EXE and DLL!*,Microsoft-Windows-AppLocker/MSI and Script!*\",\r\n    \"eastus\",\r\n    \"\",\r\n\r\n    \"KinshipProfile\",\r\n    \"DefaultWorkspace-b59c7639-06aa-4045-ae41-3ab12e354e9a-SEA\",\r\n    \"Linux\",\r\n    \"Microsoft-InsightsMetrics\",\r\n    \"\",\r\n    \"southeastasia\",\r\n    \"\"\r\n]\r\n| project Name, Workspace, OS, Streams, xPath, Location, SyslogFacilities",
+                "size": 0,
+                "timeContext": {
+                    "durationMs": 86400000
+                },
+                "queryType": 0,
+                "resourceType": "microsoft.operationalinsights/workspaces",
+                "crossComponentResources": [
+                    "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                ],
+                "visualization": "tiles",
+                "title": "Data Collection Rule ",
+                "tileSettings": {
+                    "titleContent": {
+                        "columnMatch": "Name",
+                        "formatter": 16,
+                        "formatOptions": {
+                            "showIcon": true
+                        }
+                    },
+                    "subtitleContent": {
+                        "columnMatch": "Workspace",
+                        "formatter": 9
+                    },
+                    "leftContent": {
+                        "columnMatch": "OS"
+                    },
+                    "rightContent": {
+                        "columnMatch": "xPath",
+                        "formatter": 1
+                    },
+                    "showBorder": true,
+                    "sortCriteriaField": "Location",
+                    "size": "full",
+                    "secondaryContent": {
+                        "columnMatch": "SyslogFacilities",
+                        "formatter": 1
+                    }
+                }
+            },
+            "id": "8e75c0df-d4d9-4610-bac7-e2724ccf0b2b"
+        },
+        {
+            "type": 3,
+            "name": "query - 6",
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "CommonSecurityLog\r\n| where TimeGenerated >= ago(24h)\r\n| where isnotempty(DeviceVendor)\r\n| summarize\r\n    Events = count(),\r\n    LastSeen = max(TimeGenerated),\r\n    FirstSeen = min(TimeGenerated)\r\n    by DeviceVendor, DeviceProduct\r\n| extend Status = iff(LastSeen >= ago(15m), \"Healthy\", \"No Recent Data\")\r\n| order by Events desc",
+                "size": 0,
+                "timeContext": {
+                    "durationMs": 86400000
+                },
+                "queryType": 0,
+                "resourceType": "microsoft.operationalinsights/workspaces",
+                "crossComponentResources": [
+                    "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                ],
+                "visualization": "stat",
+                "chartSettings": {
+                    "ySettings": {
+                        "scale": "log"
+                    },
+                    "yAxis": [
+                        "Events"
+                    ]
+                },
+                "tileSettings": {
+                    "titleContent": {
+                        "columnMatch": "Events",
+                        "formatter": 12,
+                        "formatOptions": {
+                            "palette": "orange"
+                        }
+                    },
+                    "subtitleContent": {
+                        "columnMatch": "DeviceVendor",
+                        "formatter": 18,
+                        "formatOptions": {
+                            "thresholdsOptions": "colors",
+                            "thresholdsGrid": [
+                                {
+                                    "operator": "Default",
+                                    "representation": "turquoise"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "title": "Fortigate DCR Health",
+                "statSettings": {
+                    "colorSettings": {
+                        "mode": "background",
+                        "type": "thresholds",
+                        "thresholdsGrid": [
+                            {
+                                "operator": "Default",
+                                "representation": "yellow"
+                            }
+                        ]
+                    },
+                    "tagTextPosition": "bottom",
+                    "iconSettings": {
+                        "thresholdsGrid": [
+                            {
+                                "operator": "Default",
+                                "representation": ""
+                            }
+                        ]
+                    }
+                }
+            },
+            "styleSettings": {
+                "showBorder": true,
+                "maxWidth": "25",
+                "borderStyle": "solid"
+            },
+            "customWidth": "25",
+            "id": "0cef173b-5619-4769-b5b6-45cb86d4863d"
+        },
+        {
+            "type": 3,
+            "name": "query - 6",
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "Syslog\r\n| where TimeGenerated >= ago(24h)\r\n| summarize\r\n    Events = count(),\r\n    LastSeen = max(TimeGenerated),\r\n    Hosts = dcount(Computer)\r\n| extend Status = iff(LastSeen >= ago(15m), \"Healthy\", \"No Recent Data\")\r\n| project Hosts, Events, LastSeen, Status",
+                "size": 0,
+                "timeContext": {
+                    "durationMs": 86400000
+                },
+                "queryType": 0,
+                "resourceType": "microsoft.operationalinsights/workspaces",
+                "crossComponentResources": [
+                    "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                ],
+                "visualization": "stat",
+                "chartSettings": {
+                    "ySettings": {
+                        "scale": "log"
+                    },
+                    "yAxis": [
+                        "Events"
+                    ]
+                },
+                "tileSettings": {
+                    "titleContent": {
+                        "columnMatch": "Events",
+                        "formatter": 12,
+                        "formatOptions": {
+                            "palette": "orange"
+                        }
+                    },
+                    "subtitleContent": {
+                        "columnMatch": "DeviceVendor",
+                        "formatter": 18,
+                        "formatOptions": {
+                            "thresholdsOptions": "colors",
+                            "thresholdsGrid": [
+                                {
+                                    "operator": "Default",
+                                    "representation": "turquoise"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "title": "Linux Syslog DCR Health",
+                "statSettings": {
+                    "valueField": "Events",
+                    "tagTextPosition": "bottom",
+                    "colorSettings": {
+                        "mode": "background",
+                        "type": "thresholds",
+                        "thresholdsGrid": [
+                            {
+                                "operator": "Default",
+                                "representation": "turquoise"
+                            }
+                        ]
+                    }
+                }
+            },
+            "styleSettings": {
+                "showBorder": true,
+                "maxWidth": "25",
+                "borderStyle": "solid"
+            },
+            "customWidth": "25",
+            "id": "c9d682cd-ac76-46d6-b36f-268670391c58"
+        },
+        {
+            "type": 3,
+            "name": "query - 6",
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "Syslog\r\n| where TimeGenerated >= ago(24h)\r\n| summarize\r\n    Events = count(),\r\n    LastSeen = max(TimeGenerated)\r\n    by Computer, Facility\r\n| order by Events desc",
+                "size": 0,
+                "timeContext": {
+                    "durationMs": 86400000
+                },
+                "queryType": 0,
+                "resourceType": "microsoft.operationalinsights/workspaces",
+                "crossComponentResources": [
+                    "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                ],
+                "visualization": "stat",
+                "chartSettings": {
+                    "ySettings": {
+                        "scale": "log"
+                    },
+                    "yAxis": [
+                        "Events"
+                    ]
+                },
+                "tileSettings": {
+                    "titleContent": {
+                        "columnMatch": "Events",
+                        "formatter": 12,
+                        "formatOptions": {
+                            "palette": "orange"
+                        }
+                    },
+                    "subtitleContent": {
+                        "columnMatch": "DeviceVendor",
+                        "formatter": 18,
+                        "formatOptions": {
+                            "thresholdsOptions": "colors",
+                            "thresholdsGrid": [
+                                {
+                                    "operator": "Default",
+                                    "representation": "turquoise"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "title": "CISCO DCR Health",
+                "statSettings": {
+                    "valueField": "Events",
+                    "tagTextPosition": "bottom",
+                    "colorSettings": {
+                        "mode": "background",
+                        "type": "thresholds",
+                        "thresholdsGrid": [
+                            {
+                                "operator": "Default",
+                                "representation": "grayBlue"
+                            }
+                        ]
+                    }
+                }
+            },
+            "styleSettings": {
+                "showBorder": true,
+                "maxWidth": "25",
+                "borderStyle": "solid"
+            },
+            "customWidth": "25",
+            "id": "e0fb48d2-f03c-48fb-9195-edb50fb522f3"
+        },
+        {
+            "type": 3,
+            "name": "query - 6",
+            "content": {
+                "version": "KqlItem/1.0",
+                "query": "SecurityEvent\r\n| where TimeGenerated >= ago(24h)\r\n| summarize\r\n    Events = count(),\r\n    LastSeen = max(TimeGenerated),\r\n    Computers = dcount(Computer)\r\n| extend Status = iff(LastSeen >= ago(15m), \"Healthy\", \"No Recent Data\")\r\n| project Computers, Events, LastSeen, Status",
+                "size": 0,
+                "timeContext": {
+                    "durationMs": 86400000
+                },
+                "queryType": 0,
+                "resourceType": "microsoft.operationalinsights/workspaces",
+                "crossComponentResources": [
+                    "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                ],
+                "visualization": "stat",
+                "chartSettings": {
+                    "ySettings": {
+                        "scale": "log"
+                    },
+                    "yAxis": [
+                        "Events"
+                    ]
+                },
+                "tileSettings": {
+                    "titleContent": {
+                        "columnMatch": "Events",
+                        "formatter": 12,
+                        "formatOptions": {
+                            "palette": "orange"
+                        }
+                    },
+                    "subtitleContent": {
+                        "columnMatch": "DeviceVendor",
+                        "formatter": 18,
+                        "formatOptions": {
+                            "thresholdsOptions": "colors",
+                            "thresholdsGrid": [
+                                {
+                                    "operator": "Default",
+                                    "representation": "turquoise"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "title": "CISCO DCR Health",
+                "statSettings": {
+                    "valueField": "Events",
+                    "tagTextPosition": "bottom",
+                    "colorSettings": {
+                        "mode": "background",
+                        "type": "thresholds",
+                        "thresholdsGrid": [
+                            {
+                                "operator": "Default",
+                                "representation": "purpleDark"
+                            }
+                        ],
+                        "heatmapPalette": "orangeDark"
+                    },
+                    "valueAggregation": "Sum"
+                }
+            },
+            "styleSettings": {
+                "showBorder": true,
+                "maxWidth": "25",
+                "borderStyle": "solid"
+            },
+            "customWidth": "25",
+            "id": "716a05dc-c04a-4914-ba04-36a035e74725"
+        }
+    ],
+    "layout": {
+        "type": "flow"
+    },
+    "fallbackResourceIds": [
+        "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+    ],
+    "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json",
+    "context": {
+        "ownerId": "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+    }
+}

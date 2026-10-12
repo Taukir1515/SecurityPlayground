@@ -1,0 +1,1640 @@
+{
+    "version": "Notebook/1.0",
+    "items": [
+        {
+            "type": 12,
+            "content": {
+                "version": "NotebookGroup/1.0",
+                "groupType": "editable",
+                "loadType": "explicit",
+                "loadButtonText": "1",
+                "items": [
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "// =====================================================\r\n// FortiGate - Source Country Traffic Map\r\n// =====================================================\r\n\r\nlet CountryStats =\r\nCommonSecurityLog\r\n| where TimeGenerated > ago(24h)\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n| extend\r\n    SourceCountry = trim(\" \", extract(@\"FTNTFGTsrccountry=([^;]+)\",1,tostring(AdditionalExtensions))),\r\n    Action = tolower(extract(@\"FTNTFGTaction=([^;]+)\",1,tostring(AdditionalExtensions)))\r\n| where isnotempty(SourceCountry)\r\n| where SourceCountry !in (\"Reserved\",\"Unknown\",\"N/A\",\"\")\r\n| summarize\r\n    Events = count(),\r\n    Allowed = countif(Action in (\"accept\",\"pass\",\"close\")),\r\n    Denied = countif(Action in (\"deny\",\"drop\",\"reject\")),\r\n    UniqueIPs = dcount(SourceIP)\r\nby SourceCountry;\r\n\r\nlet TopSourceIP =\r\nCommonSecurityLog\r\n| where TimeGenerated > ago(24h)\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n| extend\r\n    SourceCountry = trim(\" \", extract(@\"FTNTFGTsrccountry=([^;]+)\",1,tostring(AdditionalExtensions)))\r\n| summarize SourceIPEvents = count() by SourceCountry, SourceIP\r\n| summarize arg_max(SourceIPEvents, SourceIP) by SourceCountry;\r\n\r\nlet MaxEvents =\r\ntoscalar(\r\n    CountryStats\r\n    | summarize max(Events)\r\n);\r\n\r\nCountryStats\r\n| join kind=leftouter TopSourceIP on SourceCountry\r\n| extend\r\n    EventLevel = case(\r\n        Events >= 50000, \"Excessive\",\r\n        Events >= 10000, \"High\",\r\n        Events >= 5000,  \"Medium\",\r\n        \"Low\"\r\n    ),\r\n\r\n    ColorValue = case(\r\n        Events >= 50000, 4,\r\n        Events >= 10000, 3,\r\n        Events >= 5000,  2,\r\n        1\r\n    )\r\n| project\r\n    SourceCountry,\r\n    Events,\r\n    Allowed,\r\n    Denied,\r\n    UniqueIPs,\r\n    TopSourceIP = SourceIP,\r\n    EventLevel,\r\n    ColorValue\r\n| order by Events desc",
+                            "size": 0,
+                            "title": "Source Country",
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "map",
+                            "mapSettings": {
+                                "locInfo": "CountryRegion",
+                                "locInfoColumn": "SourceCountry",
+                                "sizeSettings": "Events",
+                                "legendMetric": "Events",
+                                "itemColorSettings": {
+                                    "nodeColorField": "ColorValue",
+                                    "type": "thresholds",
+                                    "heatmapPalette": "coldHot",
+                                    "colorAggregation": "Max",
+                                    "thresholdsGrid": [
+                                        {
+                                            "operator": ">=",
+                                            "thresholdValue": "4",
+                                            "representation": "magenta"
+                                        },
+                                        {
+                                            "operator": ">=",
+                                            "thresholdValue": "3",
+                                            "representation": "redBright"
+                                        },
+                                        {
+                                            "operator": ">=",
+                                            "thresholdValue": "2",
+                                            "representation": "yellow"
+                                        },
+                                        {
+                                            "operator": "Default",
+                                            "representation": "green"
+                                        }
+                                    ]
+                                },
+                                "sizeAggregation": "Sum"
+                            }
+                        },
+                        "customWidth": "50",
+                        "name": "query - 2",
+                        "styleSettings": {
+                            "showBorder": true,
+                            "maxWidth": "50",
+                            "borderStyle": "bold",
+                            "x": 0,
+                            "y": 0,
+                            "w": 12,
+                            "h": 9
+                        },
+                        "id": "25ea2b34-6984-436d-9c49-c22788d84dfd"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "// =====================================================\r\n// FortiGate - Destination Country Traffic Map\r\n// =====================================================\r\n\r\nlet CountryStats =\r\nCommonSecurityLog\r\n| where TimeGenerated > ago(24h)\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n| extend\r\n    DestinationCountry = trim(\" \", extract(@\"FTNTFGTdstcountry=([^;]+)\", 1, tostring(AdditionalExtensions))),\r\n    Action = tolower(extract(@\"FTNTFGTaction=([^;]+)\", 1, tostring(AdditionalExtensions)))\r\n| where isnotempty(DestinationCountry)\r\n| where DestinationCountry !in (\"Reserved\", \"Unknown\", \"N/A\", \"\")\r\n| summarize\r\n    Events = count(),\r\n    Allowed = countif(Action in (\"accept\",\"pass\",\"close\")),\r\n    Denied = countif(Action in (\"deny\",\"drop\",\"reject\")),\r\n    UniqueDestinationIPs = dcount(DestinationIP)\r\nby DestinationCountry;\r\n\r\nlet TopDestinationIP =\r\nCommonSecurityLog\r\n| where TimeGenerated > ago(24h)\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n| extend\r\n    DestinationCountry = trim(\" \", extract(@\"FTNTFGTdstcountry=([^;]+)\", 1, tostring(AdditionalExtensions)))\r\n| where isnotempty(DestinationCountry)\r\n| where DestinationCountry !in (\"Reserved\", \"Unknown\", \"N/A\", \"\")\r\n| summarize DestinationIPEvents = count() by DestinationCountry, DestinationIP\r\n| summarize arg_max(DestinationIPEvents, DestinationIP) by DestinationCountry;\r\n\r\nCountryStats\r\n| join kind=leftouter TopDestinationIP on DestinationCountry\r\n| extend\r\n    EventLevel = case(\r\n        Events >= 50000, \"Excessive\",\r\n        Events >= 10000, \"High\",\r\n        Events >= 5000,  \"Medium\",\r\n        \"Low\"\r\n    ),\r\n    ColorValue = case(\r\n        Events >= 50000, 4,\r\n        Events >= 10000, 3,\r\n        Events >= 5000,  2,\r\n        1\r\n    )\r\n| project\r\n    DestinationCountry,\r\n    Events,\r\n    Allowed,\r\n    Denied,\r\n    UniqueDestinationIPs,\r\n    TopDestinationIP = DestinationIP,\r\n    TopDestinationIPEvents = DestinationIPEvents,\r\n    EventLevel,\r\n    ColorValue\r\n| order by Events desc",
+                            "size": 0,
+                            "title": "Destination Country ",
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "map",
+                            "mapSettings": {
+                                "locInfo": "CountryRegion",
+                                "locInfoColumn": "DestinationCountry",
+                                "sizeSettings": "Events",
+                                "sizeAggregation": "Sum",
+                                "legendMetric": "Events",
+                                "legendAggregation": "Sum",
+                                "itemColorSettings": {
+                                    "nodeColorField": "ColorValue",
+                                    "colorAggregation": "Max",
+                                    "type": "thresholds",
+                                    "heatmapPalette": "blueGreen",
+                                    "thresholdsGrid": [
+                                        {
+                                            "operator": ">=",
+                                            "thresholdValue": "4",
+                                            "representation": "pink"
+                                        },
+                                        {
+                                            "operator": ">=",
+                                            "thresholdValue": "3",
+                                            "representation": "redBright"
+                                        },
+                                        {
+                                            "operator": ">=",
+                                            "thresholdValue": "2",
+                                            "representation": "yellow"
+                                        },
+                                        {
+                                            "operator": "Default",
+                                            "representation": "blueDark"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        "customWidth": "50",
+                        "name": "query - 2",
+                        "styleSettings": {
+                            "showBorder": true,
+                            "maxWidth": "50",
+                            "borderStyle": "light thick",
+                            "x": 12,
+                            "y": 0,
+                            "w": 12,
+                            "h": 9
+                        },
+                        "id": "48de09e9-93f8-479b-8b2d-985c80dce488"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "// ================================================\r\n// FortiGate Firewall Health Monitoring\r\n// Real-Time | Last 7 Days | Hourly\r\n// ================================================\r\n\r\nCommonSecurityLog\r\n| where TimeGenerated >= ago(7d)\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n\r\n| extend Raw = tostring(AdditionalExtensions)\r\n\r\n| where Activity =~ \"event:system\"\r\n    or Raw has \"FTNTFGTmem\"\r\n    or Raw has \"FTNTFGTtotalsession\"\r\n\r\n| extend\r\n    Memory = todouble(extract(@\"FTNTFGTmem=([0-9\\.]+)\", 1, Raw)),\r\n    Sessions = todouble(extract(@\"FTNTFGTtotalsession=([0-9]+)\", 1, Raw))\r\n\r\n| where isnotnull(Memory) or isnotnull(Sessions)\r\n\r\n| summarize\r\n    AvgMemory = round(avg(Memory), 1),\r\n    PeakMemory = round(max(Memory), 1),\r\n    AvgSessions = round(avg(Sessions), 0),\r\n    PeakSessions = max(Sessions)\r\nby TimeBucket = bin(TimeGenerated, 1h)\r\n\r\n| extend HealthStatus = case(\r\n    PeakMemory >= 90, \"Critical\",\r\n    PeakMemory >= 80, \"High\",\r\n    PeakMemory >= 70, \"Warning\",\r\n    \"Healthy\"\r\n)\r\n\r\n| project\r\n    TimeBucket,\r\n    AvgMemory,\r\n    PeakMemory,\r\n    AvgSessions,\r\n    PeakSessions,\r\n    HealthStatus\r\n\r\n| order by TimeBucket asc",
+                            "size": 0,
+                            "title": "FortiGate System Health Monitoring",
+                            "timeContext": {
+                                "durationMs": 604800000
+                            },
+                            "showRefreshButton": true,
+                            "titleOptions": {
+                                "icon": ""
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "areachart",
+                            "graphSettings": {
+                                "type": 0,
+                                "topContent": {},
+                                "nodeIdField": "Memory",
+                                "sourceIdField": "Memory",
+                                "targetIdField": "Sessions",
+                                "graphOrientation": 1,
+                                "showOrientationToggles": false,
+                                "edgeSize": "Memory",
+                                "edgeLabel": "Sessions",
+                                "nodeSize": {
+                                    "sizeField": "TimeGenerated",
+                                    "maxSize": null
+                                },
+                                "staticNodeSize": 100,
+                                "colorSettings": null,
+                                "hivesMargin": 5,
+                                "edgeColorSettings": null,
+                                "groupByField": "Sessions"
+                            },
+                            "chartSettings": {
+                                "xSettings": {
+                                    "scale": "time"
+                                },
+                                "seriesLabelSettings": [
+                                    {
+                                        "seriesName": "AvgMemory",
+                                        "color": "yellow"
+                                    },
+                                    {
+                                        "seriesName": "PeakMemory",
+                                        "color": "redBright"
+                                    },
+                                    {
+                                        "seriesName": "AvgSessions",
+                                        "color": "greenDarkDark"
+                                    },
+                                    {
+                                        "seriesName": "PeakSessions",
+                                        "color": "turquoise"
+                                    }
+                                ]
+                            },
+                            "layers": [
+                                {
+                                    "type": "seriesBand",
+                                    "name": "New Layer",
+                                    "minSeriesName": "HealthStatus",
+                                    "maxSeriesName": "TimeBucket",
+                                    "color": "blueDark",
+                                    "hideLegends": false
+                                }
+                            ],
+                            "crossComponentResources": [
+                                "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                            ],
+                            "headingLevel": 3
+                        },
+                        "name": "query - 4",
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "solid",
+                            "x": 12,
+                            "y": 9,
+                            "w": 12,
+                            "h": 7,
+                            "margin": "50",
+                            "padding": "50"
+                        },
+                        "id": "8c0af7f0-4b21-4f46-beab-dc0511f44b38"
+                    },
+                    {
+                        "type": 3,
+                        "name": "query - 4",
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "// =====================================================\r\n// FortiGate - Network Traffic Trend\r\n// Last 30 Days | 6-Hour Intervals | Auto Updating\r\n// =====================================================\r\n\r\nFortinetFortigateNetworkSessionSummary_CL\r\n| where TimeGenerated >= ago(30d)\r\n| extend\r\n    Sent = coalesce(tolong(SentBytes), 0),\r\n    Received = coalesce(tolong(ReceivedBytes), 0)\r\n| summarize\r\n    Sessions = count(),\r\n    SentGB = round(sum(Sent) / 1024.0 / 1024.0 / 1024.0, 2),\r\n    ReceivedGB = round(sum(Received) / 1024.0 / 1024.0 / 1024.0, 2),\r\n    TotalGB = round((sum(Sent) + sum(Received)) / 1024.0 / 1024.0 / 1024.0, 2)\r\nby TimeBucket = bin(TimeGenerated, 6h)\r\n| order by TimeBucket asc",
+                            "size": 0,
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "crossComponentResources": [
+                                "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                            ],
+                            "visualization": "linechart",
+                            "showViewButton": false,
+                            "showRefreshButton": true,
+                            "chartSettings": {
+                                "showLegend": true,
+                                "showMetrics": false,
+                                "simpleLegendSettings": {
+                                    "position": "top"
+                                },
+                                "seriesLabelSettings": [
+                                    {
+                                        "seriesName": "Sessions",
+                                        "color": "green"
+                                    },
+                                    {
+                                        "seriesName": "SentGB",
+                                        "color": "orange"
+                                    },
+                                    {
+                                        "seriesName": "ReceivedGB",
+                                        "color": "blue"
+                                    },
+                                    {
+                                        "seriesName": "TotalGB",
+                                        "color": "redBright"
+                                    }
+                                ]
+                            },
+                            "color": "blueOrange"
+                        },
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "light thick",
+                            "x": 0,
+                            "y": 9,
+                            "w": 12,
+                            "h": 7
+                        },
+                        "showPin": true,
+                        "id": "363a0342-3971-4328-af53-1ef2e4b95af5"
+                    }
+                ],
+                "layout": {
+                    "type": "grid"
+                }
+            },
+            "name": "Geo Location & System Health",
+            "styleSettings": {
+                "showBorder": true
+            },
+            "id": "9a7eea2b-6dd6-4373-a822-30f1d5052a15"
+        },
+        {
+            "type": 12,
+            "content": {
+                "version": "NotebookGroup/1.0",
+                "groupType": "editable",
+                "loadType": "explicit",
+                "loadButtonText": "1",
+                "items": [
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "CommonSecurityLog\r\n| where DeviceVendor == \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n| extend DstPort = iff(isnotempty(tostring(DestinationPort)), tostring(DestinationPort), \"OtherPorts\")\r\n| summarize\r\n    TotalEvent = count(),\r\n    DestIPs = make_set(DestinationIP, 5),\r\n    Protocols = make_set(ApplicationProtocol, 5)\r\n  by DstPort\r\n| order by TotalEvent desc\r\n",
+                            "size": 1,
+                            "title": "Top Destination Port ",
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "showRefreshButton": true,
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "piechart",
+                            "chartSettings": {
+                                "showLegend": true,
+                                "simpleLegendSettings": {
+                                    "position": "right"
+                                },
+                                "seriesLabelSettings": [
+                                    {
+                                        "seriesName": "8081",
+                                        "color": "redBright"
+                                    },
+                                    {
+                                        "seriesName": "80",
+                                        "color": "green"
+                                    },
+                                    {
+                                        "seriesName": "443",
+                                        "color": "blue"
+                                    },
+                                    {
+                                        "seriesName": "32526",
+                                        "color": "magenta"
+                                    },
+                                    {
+                                        "seriesName": "1883",
+                                        "color": "pink"
+                                    },
+                                    {
+                                        "seriesName": "Others",
+                                        "color": "orange"
+                                    }
+                                ],
+                                "legendSettings": {
+                                    "position": "bottom"
+                                }
+                            }
+                        },
+                        "customWidth": "40",
+                        "name": "query - 2 ",
+                        "styleSettings": {
+                            "showBorder": true,
+                            "margin": "1",
+                            "padding": "1",
+                            "maxWidth": "40",
+                            "borderStyle": "light thick",
+                            "x": 0,
+                            "y": 28,
+                            "w": 8,
+                            "h": 8
+                        },
+                        "id": "d72e9b9b-7431-49e4-b3f0-0ae5db5949c8"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "CommonSecurityLog\r\n| where TimeGenerated >= ago(15m)\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n| extend RawExt = tostring(AdditionalExtensions)\r\n| extend Action = tolower(extract(@\"FTNTFGTaction=([^;]+)\", 1, RawExt))\r\n| where Action in (\"accept\", \"pass\", \"close\", \"deny\", \"drop\", \"reject\")\r\n| extend BandwidthMB = (coalesce(toreal(SentBytes), 0.0) + coalesce(toreal(ReceivedBytes), 0.0)) / 1024.0 / 1024.0\r\n| summarize Sessions = count(), TotalBandwidthMB = sum(BandwidthMB) by SourceIP\r\n| top 10 by TotalBandwidthMB desc\r\n",
+                            "size": 0,
+                            "title": "Top Source IPs",
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "showRefreshButton": true,
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "piechart",
+                            "chartSettings": {
+                                "showLegend": true,
+                                "seriesLabelSettings": [
+                                    {
+                                        "seriesName": "222.165.139.234",
+                                        "color": "orange"
+                                    },
+                                    {
+                                        "seriesName": "119.148.48.250",
+                                        "color": "pink"
+                                    },
+                                    {
+                                        "seriesName": "202.124.178.130",
+                                        "color": "blueDark"
+                                    },
+                                    {
+                                        "seriesName": "10.0.10.4",
+                                        "color": "purple"
+                                    },
+                                    {
+                                        "seriesName": "124.43.4.100",
+                                        "color": "greenDarkDark"
+                                    },
+                                    {
+                                        "seriesName": "Others",
+                                        "color": "turquoise"
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "Source IP with Bandwith",
+                        "styleSettings": {
+                            "showBorder": true,
+                            "margin": "1",
+                            "padding": "1",
+                            "borderStyle": "solid",
+                            "x": 8,
+                            "y": 28,
+                            "w": 8,
+                            "h": 8
+                        },
+                        "id": "d4216de4-cc8f-441f-b54f-6becad18b3c9"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "CommonSecurityLog\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n| extend RawExt = tostring(AdditionalExtensions)\r\n\r\n| extend Action = tolower(extract(@\"FTNTFGTaction=([^;]+)\",1,RawExt))\r\n\r\n| extend Result = case(\r\n    Action in (\"accept\",\"pass\",\"close\"), \"🟢 Allowed\",\r\n    Action in (\"deny\",\"drop\",\"reject\"), \"🔴 Blocked\",\r\n    \"🟡 Other\"\r\n)\r\n\r\n| extend App = extract(@\"FTNTFGTapp=([^;]+)\",1,RawExt)\r\n| extend AppCat = extract(@\"FTNTFGTappcat=([^;]+)\",1,RawExt)\r\n\r\n| extend Why = case(\r\n    Result contains \"Blocked\", coalesce(App, AppCat, tostring(Message), \"Blocked by Firewall Policy\"),\r\n    Result contains \"Allowed\", coalesce(App, AppCat, tostring(Message), \"Allowed by Firewall Policy\"),\r\n    coalesce(App, AppCat, tostring(Message), \"Other\")\r\n)\r\n\r\n//\r\n// Highlight Unscanned\r\n//\r\n| extend Why =\r\ncase(\r\n    tolower(Why) contains \"unscanned\", \"🚨 🔴 UNSCANNED\",\r\n    Why\r\n)\r\n\r\n| summarize\r\n    Sessions = count(),\r\n    SourceIPs = dcount(SourceIP),\r\n    DestinationIPs = dcount(DestinationIP)\r\nby\r\n    Result,\r\n    Action,\r\n    Why,\r\n    App,\r\n    AppCat,\r\n    DestinationPort\r\n\r\n| order by Sessions desc",
+                            "size": 2,
+                            "title": "Traffic Summary by Action Details",
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "showRefreshButton": true,
+                            "showExportToExcel": true,
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "table",
+                            "showExpandCollapseGrid": true,
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "Result",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "colors",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "contains",
+                                                    "sourceColumn": "Result",
+                                                    "thresholdValue": "Allowed",
+                                                    "representation": "green"
+                                                },
+                                                {
+                                                    "operator": "contains",
+                                                    "sourceColumn": "Result",
+                                                    "thresholdValue": "Blocked",
+                                                    "representation": "redBright"
+                                                },
+                                                {
+                                                    "operator": "contains",
+                                                    "sourceColumn": "Result",
+                                                    "thresholdValue": "Other",
+                                                    "representation": "yellow"
+                                                },
+                                                {
+                                                    "operator": "Default"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "Action",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "colors",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "contains",
+                                                    "sourceColumn": "Action",
+                                                    "thresholdValue": "deny",
+                                                    "representation": "redBright"
+                                                },
+                                                {
+                                                    "operator": "contains",
+                                                    "sourceColumn": "Action",
+                                                    "thresholdValue": "accept",
+                                                    "representation": "green"
+                                                },
+                                                {
+                                                    "operator": "contains",
+                                                    "sourceColumn": "Action",
+                                                    "thresholdValue": "pass",
+                                                    "representation": "green"
+                                                },
+                                                {
+                                                    "operator": "Default"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "Why",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "colors",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "Default"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "AppCat",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "colors",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "contains",
+                                                    "sourceColumn": "AppCat",
+                                                    "thresholdValue": "unscanned",
+                                                    "representation": "redBright"
+                                                },
+                                                {
+                                                    "operator": "Default"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ],
+                                "filter": true,
+                                "sortBy": [
+                                    {
+                                        "itemKey": "Result",
+                                        "sortOrder": 2
+                                    }
+                                ]
+                            },
+                            "sortBy": [],
+                            "crossComponentResources": [
+                                "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                            ]
+                        },
+                        "customWidth": "50",
+                        "name": "Traffic Summary by Action, App, and Destination Port",
+                        "styleSettings": {
+                            "maxWidth": "50",
+                            "margin": "1",
+                            "padding": "1",
+                            "showBorder": true,
+                            "borderStyle": "solid",
+                            "x": 0,
+                            "y": 19,
+                            "w": 14,
+                            "h": 9
+                        },
+                        "id": "ac4ff1ca-efd2-484a-93a4-e042ddf0e949"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "CommonSecurityLog\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n| extend RawExt = tostring(AdditionalExtensions)\r\n| extend Action = tolower(extract(@\"FTNTFGTaction=([^;]+)\", 1, RawExt))\r\n| extend Result = case(\r\n    Action in (\"accept\", \"pass\", \"close\"), \"Allowed\",\r\n    Action in (\"deny\", \"drop\", \"reject\"), \"Blocked\",\r\n    \"Other\")\r\n| extend PolicyName = extract(@\"FTNTFGTpolicyname=([^;]+)\", 1, RawExt)\r\n| extend App = extract(@\"FTNTFGTapp=([^;]+)\", 1, RawExt)\r\n| extend AppCat = extract(@\"FTNTFGTappcat=([^;]+)\", 1, RawExt)\r\n| extend Why = case(\r\n    Result == \"Blocked\", coalesce(PolicyName, App, AppCat, tostring(Message), \"Blocked by firewall policy\"),\r\n    Result == \"Allowed\", coalesce(PolicyName, App, AppCat, tostring(Message), \"Allowed by firewall policy\"),\r\n    coalesce(PolicyName, App, AppCat, tostring(Message), \"Other\"))\r\n| summarize\r\n    Events = count(),\r\n    SrcIPs = dcount(SourceIP),\r\n    DstIPs = dcount(DestinationIP)\r\n  by Result, Action, Why\r\n//| top 20 by Events desc\r\n",
+                            "size": 0,
+                            "title": "Allow & Block Summary",
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "piechart",
+                            "chartSettings": {
+                                "xAxis": "Result"
+                            }
+                        },
+                        "name": "query - 1",
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "solid",
+                            "margin": "1",
+                            "padding": "1",
+                            "x": 0,
+                            "y": 43,
+                            "w": 8,
+                            "h": 8
+                        },
+                        "id": "6471bfac-b80e-49bd-8285-c0ca805c246b"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "CommonSecurityLog\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n| extend\r\n    Application = extract(@\"FTNTFGTapp=([^;]+)\", 1, tostring(AdditionalExtensions)),\r\n    Risk = extract(@\"FTNTFGTapprisk=([^;]+)\", 1, tostring(AdditionalExtensions))\r\n| where isnotempty(Application)\r\n| summarize Events = count() by Application, Risk\r\n//| top 20 by Events desc",
+                            "size": 0,
+                            "title": "Top Protocol by Event",
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "showRefreshButton": true,
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "categoricalbar",
+                            "chartSettings": {
+                                "tooltipSettings": {
+                                    "mode": "nearest"
+                                },
+                                "group": "Risk",
+                                "legendSettings": {
+                                    "position": "left",
+                                    "sortOrder": 1
+                                },
+                                "showLegend": true,
+                                "simpleLegendSettings": {
+                                    "position": "bottom"
+                                },
+                                "ySettings": {
+                                    "scale": "log"
+                                }
+                            }
+                        },
+                        "name": "RIsk and Event focused",
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "solid",
+                            "x": 14,
+                            "y": 19,
+                            "w": 10,
+                            "h": 9
+                        },
+                        "id": "42e51299-2c21-4185-9000-2a5035ab04d3"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "// =====================================\r\n// Q.SOC - Risky Users Distribution\r\n// =====================================\r\n\r\nAADUserRiskEvents\r\n| summarize RiskLevel = any(RiskLevel) by UserPrincipalName\r\n| where tolower(RiskLevel) in (\"high\",\"medium\",\"hidden\")\r\n| summarize Users = dcount(UserPrincipalName) by RiskLevel\r\n| order by Users desc",
+                            "size": 0,
+                            "title": "Risky User",
+                            "timeContext": {
+                                "durationMs": 7776000000
+                            },
+                            "showRefreshButton": true,
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "piechart",
+                            "chartSettings": {
+                                "yAxis": [
+                                    "Users"
+                                ],
+                                "group": "RiskLevel",
+                                "showLegend": true,
+                                "seriesLabelSettings": [
+                                    {
+                                        "seriesName": "medium",
+                                        "color": "redBright"
+                                    },
+                                    {
+                                        "seriesName": "high",
+                                        "color": "yellow"
+                                    },
+                                    {
+                                        "seriesName": "hidden",
+                                        "color": "pink"
+                                    }
+                                ]
+                            }
+                        },
+                        "customWidth": "30",
+                        "name": "query - 3",
+                        "styleSettings": {
+                            "maxWidth": "30",
+                            "showBorder": true,
+                            "borderStyle": "solid",
+                            "padding": "1",
+                            "margin": "1",
+                            "x": 16,
+                            "y": 28,
+                            "w": 8,
+                            "h": 8
+                        },
+                        "id": "893313eb-88d6-4959-8256-2a5dc9b6f20b"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "// =======================================================\r\n// Top 10 Bandwidth Consumers - FortiGate\r\n// Combines FortiGate firewall traffic logs with Microsoft Defender device inventory\r\n// =======================================================\r\n\r\nlet DeviceMap =\r\nDeviceNetworkEvents\r\n| where isnotempty(LocalIP)\r\n| summarize arg_max(TimeGenerated, DeviceName) by SourceIP = LocalIP\r\n| project SourceIP, DeviceName;\r\n\r\nCommonSecurityLog\r\n| where TimeGenerated > ago(30d)\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n\r\n| extend RawExt = tostring(AdditionalExtensions)\r\n\r\n| extend SourceCountry = extract(@\"FTNTFGTsrccountry=([^;]+)\", 1, RawExt)\r\n\r\n| extend SourceCountry = case(\r\n    isempty(SourceCountry), \"🌐 Unknown\",\r\n    SourceCountry == \"Reserved\", \"🏢 Internal\",\r\n    strcat(\"🌍 \", SourceCountry)\r\n)\r\n\r\n| summarize\r\n    Sessions = count(),\r\n    UploadGB = round(sum(todouble(SentBytes)) / 1024.0 / 1024.0 / 1024.0, 2),\r\n    DownloadGB = round(sum(todouble(ReceivedBytes)) / 1024.0 / 1024.0 / 1024.0, 2),\r\n    TotalGB = round((sum(todouble(SentBytes)) + sum(todouble(ReceivedBytes))) / 1024.0 / 1024.0 / 1024.0, 2)\r\nby\r\n    SourceIP,\r\n    SourceCountry\r\n\r\n| join kind=leftouter DeviceMap on SourceIP\r\n\r\n| extend DeviceName = iff(isempty(DeviceName), \"🌐 External Device\", DeviceName)\r\n\r\n| extend TrafficLevel = case(\r\n    TotalGB >= 1000, \"🔥 Critical\",\r\n    TotalGB >= 500,  \"🔴 Very High\",\r\n    TotalGB >= 100,  \"🟠 High\",\r\n    TotalGB >= 20,   \"🟡 Medium\",\r\n                     \"🟢 Low\"\r\n)\r\n\r\n//| top 10 by TotalGB desc\r\n\r\n| project\r\n    DeviceName,\r\n    SourceIP,\r\n    SourceCountry,\r\n    Sessions,\r\n    UploadGB,\r\n    DownloadGB,\r\n    TotalGB,\r\n    TrafficLevel\r\n\r\n| order by TotalGB desc",
+                            "size": 0,
+                            "title": "Top Bandwidth Consumers",
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "showRefreshButton": true,
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "table",
+                            "gridSettings": {
+                                "filter": true,
+                                "sortBy": [
+                                    {
+                                        "itemKey": "TrafficLevel",
+                                        "sortOrder": 1
+                                    }
+                                ]
+                            },
+                            "crossComponentResources": [
+                                "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                            ]
+                        },
+                        "name": "query - 3",
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "solid",
+                            "x": 12,
+                            "y": 0,
+                            "w": 12,
+                            "h": 11
+                        },
+                        "id": "f8752888-9318-426c-a60e-52ecc8e753e5"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "// =====================================================\r\n// FortiGate - Live Top Bandwidth Consumers\r\n// Auto Refresh | Last 24 Hours\r\n// =====================================================\r\n\r\nFortinetFortigateNetworkSessionSummary_CL\r\n| where TimeGenerated >= ago(24h)\r\n| where isnotempty(SourceIP)\r\n\r\n| extend\r\n    Sent = coalesce(todouble(SentBytes), 0.0),\r\n    Received = coalesce(todouble(ReceivedBytes), 0.0)\r\n\r\n| summarize\r\n    Sessions = sum(Count),\r\n    TotalTrafficGB = round((sum(Sent) + sum(Received)) / 1024.0 / 1024.0 / 1024.0, 2),\r\n    UploadGB = round(sum(Sent) / 1024.0 / 1024.0 / 1024.0, 2),\r\n    DownloadGB = round(sum(Received) / 1024.0 / 1024.0 / 1024.0, 2),\r\n    DestinationIPs = dcount(DestinationIP)\r\nby SourceIP\r\n\r\n| extend\r\n    TrafficLevel = case(\r\n        TotalTrafficGB >= 50, \"🔥 Critical\",\r\n        TotalTrafficGB >= 20, \"🔴 High\",\r\n        TotalTrafficGB >= 5,  \"🟠 Medium\",\r\n        TotalTrafficGB > 0,   \"🟢 Low\",\r\n        \"⚪ No Traffic\"\r\n    )\r\n| order by TotalTrafficGB desc",
+                            "size": 0,
+                            "title": "Top Bandwith Trend",
+                            "timeContext": {
+                                "durationMs": 2419200000
+                            },
+                            "showRefreshButton": true,
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "tiles",
+                            "gridSettings": {
+                                "filter": true
+                            },
+                            "tileSettings": {
+                                "titleContent": {
+                                    "columnMatch": "SourceIP",
+                                    "formatter": 2
+                                },
+                                "leftContent": {
+                                    "columnMatch": "Sessions",
+                                    "formatter": 8,
+                                    "formatOptions": {
+                                        "palette": "categorical"
+                                    }
+                                },
+                                "rightContent": {
+                                    "columnMatch": "UploadGB",
+                                    "formatter": 1
+                                },
+                                "secondaryContent": {
+                                    "columnMatch": "DownloadGB",
+                                    "formatter": 18
+                                },
+                                "showBorder": true,
+                                "styleSettings": {
+                                    "backgroundColor": "colorGray200"
+                                },
+                                "subtitleContent": {
+                                    "columnMatch": "TotalTrafficGB",
+                                    "formatter": 4,
+                                    "formatOptions": {
+                                        "palette": "redBright"
+                                    }
+                                },
+                                "sortCriteriaField": "SourceIP",
+                                "sortOrderField": 2
+                            },
+                            "graphSettings": {
+                                "type": 0,
+                                "topContent": {},
+                                "nodeIdField": "TimeGenerated",
+                                "sourceIdField": "TimeGenerated",
+                                "targetIdField": "TotalGB",
+                                "graphOrientation": 3,
+                                "showOrientationToggles": false,
+                                "nodeSize": null,
+                                "staticNodeSize": 100,
+                                "colorSettings": null,
+                                "hivesMargin": 5,
+                                "edgeColorSettings": null
+                            },
+                            "chartSettings": {
+                                "legendSettings": {
+                                    "position": "bottom"
+                                },
+                                "showLegend": true
+                            },
+                            "crossComponentResources": [
+                                "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                            ]
+                        },
+                        "name": "query - 3",
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "light thick",
+                            "x": 0,
+                            "y": 0,
+                            "w": 12,
+                            "h": 11
+                        },
+                        "id": "330c47d1-2e94-4397-b6cd-7ecb1edd0695"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "// =====================================================\r\n// FortiGate Policy Bandwidth Summary\r\n// Last 7 Days | Hourly | Auto Updating\r\n// =====================================================\r\n\r\nCommonSecurityLog\r\n| where TimeGenerated >= ago(7d)\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n\r\n| extend Raw = tostring(AdditionalExtensions)\r\n\r\n| extend\r\n    PolicyName = trim(\" \", extract(@\"FTNTFGTpolicyname=([^;]+)\", 1, Raw)),\r\n    PolicyID = trim(\" \", extract(@\"FTNTFGTpolicyid=([^;]+)\", 1, Raw))\r\n\r\n| extend\r\n    PolicyName = iff(isempty(PolicyName), strcat(\"Policy-\", PolicyID), PolicyName),\r\n    SentGB = todouble(SentBytes) / 1024.0 / 1024.0 / 1024.0,\r\n    ReceivedGB = todouble(ReceivedBytes) / 1024.0 / 1024.0 / 1024.0\r\n\r\n| summarize\r\n    Sessions = count(),\r\n    UploadGB = round(sum(SentGB), 2),\r\n    DownloadGB = round(sum(ReceivedGB), 2),\r\n    TotalGB = round(sum(SentGB + ReceivedGB), 2)\r\nby\r\n    TimeBucket = bin(TimeGenerated, 1h),\r\n    PolicyName,\r\n    PolicyID\r\n\r\n| extend TrafficLevel = case(\r\n    TotalGB >= 100, \"Critical\",\r\n    TotalGB >= 50, \"High\",\r\n    TotalGB >= 10, \"Medium\",\r\n    \"Low\"\r\n)\r\n\r\n| order by TimeBucket asc, TotalGB desc",
+                            "size": 0,
+                            "title": "Top Firewall Policies by Traffic",
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "piechart",
+                            "graphSettings": {
+                                "type": 0,
+                                "groupByField": "PolicyName",
+                                "nodeIdField": "PolicyName",
+                                "colorSettings": {
+                                    "type": 4,
+                                    "nodeColorField": "TotalGB",
+                                    "heatmapPalette": "turquoise"
+                                },
+                                "hivesContent": {
+                                    "columnMatch": "PolicyName",
+                                    "formatter": 12
+                                },
+                                "topContent": {
+                                    "columnMatch": "TotalGB",
+                                    "formatter": 12
+                                },
+                                "leftContent": {
+                                    "columnMatch": "TotalGB"
+                                },
+                                "nodeSize": {
+                                    "sizeField": "TotalGB",
+                                    "minSize": 5
+                                },
+                                "edgeColorSettings": {
+                                    "type": 2,
+                                    "edgeColorField": "TotalGB"
+                                }
+                            },
+                            "chartSettings": {
+                                "xAxis": "Sessions",
+                                "seriesLabelSettings": [
+                                    {
+                                        "seriesName": "HRIS-8081-Inbound",
+                                        "color": "redBright"
+                                    },
+                                    {
+                                        "seriesName": "Policy-0",
+                                        "color": "orange"
+                                    },
+                                    {
+                                        "seriesName": "BMS-Inbound-1883",
+                                        "color": "blueDark"
+                                    },
+                                    {
+                                        "seriesName": "HRIS-Tointernet",
+                                        "color": "yellow"
+                                    },
+                                    {
+                                        "seriesName": "Policy-3",
+                                        "color": "lightBlue"
+                                    },
+                                    {
+                                        "seriesName": "Others",
+                                        "color": "blue"
+                                    }
+                                ]
+                            },
+                            "crossComponentResources": [
+                                "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                            ],
+                            "tileSettings": {
+                                "size": "full",
+                                "showBorder": true,
+                                "sortCriteriaField": "TrafficLevel",
+                                "sortOrderField": 1,
+                                "titleContent": {
+                                    "columnMatch": "PolicyName"
+                                },
+                                "subtitleContent": {
+                                    "columnMatch": "UploadGB"
+                                },
+                                "leftContent": {
+                                    "columnMatch": "Sessions"
+                                },
+                                "rightContent": {
+                                    "columnMatch": "TrafficLevel"
+                                },
+                                "secondaryContent": {
+                                    "columnMatch": "TotalGB"
+                                }
+                            }
+                        },
+                        "name": "query - 3",
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "solid",
+                            "x": 0,
+                            "y": 11,
+                            "w": 11,
+                            "h": 8
+                        },
+                        "id": "589b922b-18eb-4f07-8ba5-f639de351c71"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "// =====================================================\r\n// Threat Detection Trend (Day by Day)\r\n// =====================================================\r\n\r\nCommonSecurityLog\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n\r\n| extend Raw = tostring(AdditionalExtensions)\r\n\r\n| extend\r\n    EventType = extract(@\"FTNTFGTeventtype=([^;]+)\",1,Raw),\r\n    SubType = extract(@\"FTNTFGTsubtype=([^;]+)\",1,Raw),\r\n    Severity = tolower(extract(@\"FTNTFGTseverity=([^;]+)\",1,Raw)),\r\n    Threat = extract(@\"FTNTFGTattack=([^;]+)\",1,Raw)\r\n\r\n| where EventType in (\"signature\",\"utm\")\r\n    or SubType in (\"ips\",\"virus\",\"app-ctrl\",\"webfilter\",\"anomaly\")\r\n    or isnotempty(Threat)\r\n\r\n| extend Severity = case(\r\n    Severity == \"critical\",\"🔥 Critical\",\r\n    Severity == \"high\",\"🔴 High\",\r\n    Severity == \"medium\",\"🟠 Medium\",\r\n    Severity == \"low\",\"🟢 Low\",\r\n    \"⚪ Unknown\"\r\n)\r\n\r\n| summarize ThreatDetections = count()\r\n    by bin(TimeGenerated,1d), Severity\r\n\r\n| order by TimeGenerated asc",
+                            "size": 0,
+                            "title": "Threat Detection Trend",
+                            "timeContext": {
+                                "durationMs": 7776000000
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "linechart",
+                            "chartSettings": {
+                                "showLegend": true,
+                                "legendSettings": {
+                                    "sortOrder": 2
+                                },
+                                "simpleLegendSettings": {
+                                    "position": "left"
+                                }
+                            }
+                        },
+                        "name": "query - 7",
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "light thick",
+                            "x": 11,
+                            "y": 11,
+                            "w": 13,
+                            "h": 8
+                        },
+                        "id": "42e20273-efb7-4975-8e70-959b6e7fad5f"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "AzureDiagnostics\r\n| where TimeGenerated >= ago(30d)\r\n| where ResourceProvider =~ \"MICROSOFT.LOGIC\"\r\n| summarize\r\n    Succeeded = countif(status_s == \"Succeeded\"),\r\n    Failed = countif(status_s == \"Failed\")\r\n| extend TotalCompleted = Succeeded + Failed\r\n| extend SuccessRate = round(100.0 * todouble(Succeeded) / iif(TotalCompleted == 0, 1.0, todouble(TotalCompleted)), 2)\r\n| project SuccessRate, Succeeded, Failed, TotalCompleted\r\n",
+                            "size": 0,
+                            "title": "Automation Success Rate",
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "stat",
+                            "statSettings": {
+                                "valueField": "SuccessRate",
+                                "tagTextPosition": "bottom",
+                                "iconSettings": {
+                                    "thresholdsGrid": [
+                                        {
+                                            "operator": "is Empty",
+                                            "representation": "failed"
+                                        },
+                                        {
+                                            "operator": "Default",
+                                            "representation": "success"
+                                        }
+                                    ]
+                                },
+                                "colorSettings": {
+                                    "mode": "background",
+                                    "type": "thresholds",
+                                    "thresholdsGrid": [
+                                        {
+                                            "operator": "Default",
+                                            "representation": "green"
+                                        }
+                                    ]
+                                }
+                            },
+                            "crossComponentResources": [
+                                "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                            ]
+                        },
+                        "name": "query - 4",
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "light thick",
+                            "x": 8,
+                            "y": 36,
+                            "w": 5,
+                            "h": 6
+                        },
+                        "id": "19d81071-b1b8-4870-8f93-212c49084e1c"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "CommonSecurityLog\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n| summarize TotalEvents = count()\r\n| extend Status = \"🟢 Live\", LastUpdated = now()",
+                            "size": 0,
+                            "title": "Real-Time Firewall Events",
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "stat",
+                            "statSettings": {
+                                "tagTextPosition": "bottom",
+                                "iconSettings": {
+                                    "thresholdsGrid": [
+                                        {
+                                            "operator": "is Empty",
+                                            "representation": "failed"
+                                        },
+                                        {
+                                            "operator": "Default",
+                                            "representation": "AllServices"
+                                        }
+                                    ]
+                                },
+                                "colorSettings": {
+                                    "mode": "background",
+                                    "type": "thresholds",
+                                    "thresholdsGrid": [
+                                        {
+                                            "operator": "Default",
+                                            "representation": "turquoise"
+                                        }
+                                    ]
+                                }
+                            },
+                            "crossComponentResources": [
+                                "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                            ],
+                            "showRefreshButton": true
+                        },
+                        "name": "query - 4",
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "light thick",
+                            "x": 8,
+                            "y": 42,
+                            "w": 5,
+                            "h": 5
+                        },
+                        "id": "faa94f32-2533-496c-b69e-bcbc8daa15dd"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "AzureDiagnostics\r\n| where TimeGenerated >= ago(30d)\r\n| where ResourceProvider =~ \"MICROSOFT.LOGIC\"\r\n| where Category==\"WorkflowRuntime\"\r\n| summarize Runs=count() by status_s",
+                            "size": 0,
+                            "title": "Automation Workflow",
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "piechart",
+                            "statSettings": {
+                                "valueField": "SuccessRate",
+                                "tagTextPosition": "bottom",
+                                "iconSettings": {
+                                    "thresholdsGrid": [
+                                        {
+                                            "operator": "is Empty",
+                                            "representation": "failed"
+                                        },
+                                        {
+                                            "operator": "Default",
+                                            "representation": "success"
+                                        }
+                                    ]
+                                }
+                            },
+                            "crossComponentResources": [
+                                "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                            ],
+                            "chartSettings": {
+                                "showMetrics": false,
+                                "showLegend": true,
+                                "simpleLegendSettings": {
+                                    "position": "top"
+                                },
+                                "seriesLabelSettings": [
+                                    {
+                                        "seriesName": "Running",
+                                        "color": "blueDark"
+                                    },
+                                    {
+                                        "seriesName": "Skipped",
+                                        "color": "yellow"
+                                    },
+                                    {
+                                        "seriesName": "Succeeded",
+                                        "color": "green"
+                                    },
+                                    {
+                                        "seriesName": "Failed",
+                                        "color": "redBright"
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query - 4",
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "light thick",
+                            "x": 0,
+                            "y": 36,
+                            "w": 8,
+                            "h": 7
+                        },
+                        "id": "644e6442-6015-4589-b9b9-9cfb268804cf"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "// =======================================================\r\n// Top Detection Rules Performance Dashboard\r\n// =======================================================\r\n\r\nlet TotalIncidents =\r\n    toscalar(\r\n        SecurityIncident\r\n        | summarize Total = dcount(IncidentNumber)\r\n    );\r\n\r\nlet IncidentAlertMap =\r\n    SecurityIncident\r\n    | mv-expand AlertId = AlertIds to typeof(string)\r\n    | project\r\n        IncidentNumber,\r\n        Status,\r\n        CreatedTime,\r\n        ClosedTime,\r\n        AlertId;\r\n\r\nIncidentAlertMap\r\n| join kind=leftouter (\r\n    SecurityAlert\r\n    | project\r\n        SystemAlertId,\r\n        AlertName,\r\n        AlertSeverity,\r\n        AlertTime = TimeGenerated\r\n) on $left.AlertId == $right.SystemAlertId\r\n| where isnotempty(AlertName)\r\n| summarize\r\n    Incidents = dcount(IncidentNumber),\r\n    ActiveIncidents = dcountif(IncidentNumber, Status =~ \"Active\"),\r\n    ClosedIncidents = dcountif(IncidentNumber, Status =~ \"Closed\"),\r\n    HighSeverityIncidents = dcountif(IncidentNumber, AlertSeverity =~ \"High\"),\r\n    MediumSeverityIncidents = dcountif(IncidentNumber, AlertSeverity =~ \"Medium\"),\r\n    LowSeverityIncidents = dcountif(IncidentNumber, AlertSeverity =~ \"Low\"),\r\n    AvgClosureHours = avgif(datetime_diff(\"hour\", ClosedTime, CreatedTime), Status =~ \"Closed\"),\r\n    LastTriggered = max(AlertTime)\r\n    by AlertName\r\n| extend\r\n    IncidentSharePct = iff(\r\n        TotalIncidents == 0,\r\n        0.0,\r\n        round(100.0 * todouble(Incidents) / todouble(TotalIncidents), 2)\r\n    ),\r\n    ClosureRatePct = iff(\r\n        Incidents == 0,\r\n        0.0,\r\n        round(100.0 * todouble(ClosedIncidents) / todouble(Incidents), 2)\r\n    ),\r\n    RiskLevel = case(\r\n        HighSeverityIncidents >= 10, \"🔴 Critical\",\r\n        HighSeverityIncidents >= 5, \"🟠 High\",\r\n        MediumSeverityIncidents >= 5, \"🟡 Medium\",\r\n        \"🟢 Low\"\r\n    )\r\n| project\r\n    AlertName,\r\n    RiskLevel,\r\n    Incidents,\r\n    IncidentSharePct,\r\n    ClosureRatePct,\r\n    ActiveIncidents,\r\n    ClosedIncidents,\r\n    HighSeverityIncidents,\r\n    MediumSeverityIncidents,\r\n    LowSeverityIncidents,\r\n    AvgClosureHours = round(AvgClosureHours, 2),\r\n    LastTriggered\r\n| order by\r\n    HighSeverityIncidents desc,\r\n    Incidents desc,\r\n    LastTriggered desc\r\n",
+                            "size": 0,
+                            "title": "Detection Rules Performance",
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "linechart",
+                            "statSettings": {
+                                "valueField": "SuccessRate",
+                                "tagTextPosition": "bottom",
+                                "iconSettings": {
+                                    "thresholdsGrid": [
+                                        {
+                                            "operator": "is Empty",
+                                            "representation": "failed"
+                                        },
+                                        {
+                                            "operator": "Default",
+                                            "representation": "success"
+                                        }
+                                    ]
+                                }
+                            },
+                            "crossComponentResources": [
+                                "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                            ]
+                        },
+                        "name": "query - 4",
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "light thick",
+                            "x": 13,
+                            "y": 36,
+                            "w": 11,
+                            "h": 6
+                        },
+                        "id": "e60962ca-096d-4602-963d-d8ff7361205a"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "// =====================================================\r\n// FortiGate Event Trend\r\n// =====================================================\r\n\r\nCommonSecurityLog\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n\r\n| extend Raw = tostring(AdditionalExtensions)\r\n| extend Action = tolower(extract(@\"FTNTFGTaction=([^;]+)\",1,Raw))\r\n\r\n| summarize\r\n    TotalEvents = count(),\r\n    Allowed = countif(Action in (\"accept\",\"pass\",\"close\")),\r\n    Blocked = countif(Action in (\"deny\",\"drop\",\"reject\"))\r\nby bin(TimeGenerated, 1h)\r\n\r\n| order by TimeGenerated asc",
+                            "size": 0,
+                            "title": "Fortigate Event Trend",
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "showRefreshButton": true,
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "visualization": "areachart",
+                            "statSettings": {
+                                "valueField": "SuccessRate",
+                                "tagTextPosition": "bottom",
+                                "iconSettings": {
+                                    "thresholdsGrid": [
+                                        {
+                                            "operator": "is Empty",
+                                            "representation": "failed"
+                                        },
+                                        {
+                                            "operator": "Default",
+                                            "representation": "success"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        "name": "query - 4",
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "light thick",
+                            "x": 13,
+                            "y": 42,
+                            "w": 11,
+                            "h": 6
+                        },
+                        "id": "9a6a1649-83f3-4c94-8aca-99d30bc94e71"
+                    },
+                    {
+                        "type": 3,
+                        "name": "query - 3",
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "// =====================================================\r\n// FortiGate UTM Modules Log Volume\r\n// Last 30 Days\r\n// =====================================================\r\n\r\nCommonSecurityLog\r\n| where TimeGenerated >= ago(30d)\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n| extend Raw = tostring(AdditionalExtensions)\r\n| extend UTMModule = case(\r\n    Raw has \"appcat=\" or Raw has \"appid=\", \"Application Control\",\r\n    Raw has \"webfilter\", \"Web Filter\",\r\n    Raw has \"dnsfilter\", \"DNS Filter\",\r\n    Raw has \"ssl\", \"SSL Inspection\",\r\n    Raw has \"ips\", \"IPS\",\r\n    Raw has \"virus\" or Raw has \"antivirus\", \"Antivirus\",\r\n    \"Other UTM modules\"\r\n)\r\n| summarize\r\n    LogCount = count(),\r\n    EventCount = sum(EventCount)\r\n    by UTMModule\r\n| order by LogCount desc\r\n",
+                            "size": 0,
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "crossComponentResources": [
+                                "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                            ],
+                            "visualization": "piechart",
+                            "chartSettings": {
+                                "seriesLabelSettings": [
+                                    {
+                                        "seriesName": "Other UTM modules",
+                                        "color": "turquoise"
+                                    },
+                                    {
+                                        "seriesName": "SSL Inspection",
+                                        "color": "orange"
+                                    },
+                                    {
+                                        "seriesName": "IPS",
+                                        "color": "yellow"
+                                    },
+                                    {
+                                        "seriesName": "Web Filter",
+                                        "color": "purple"
+                                    }
+                                ]
+                            },
+                            "title": "FortiGate Log Volume by Category"
+                        },
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "light thick",
+                            "x": 19,
+                            "y": 48,
+                            "w": 5,
+                            "h": 6
+                        },
+                        "id": "d8d2127a-d67a-4fe1-9a1a-b4425fb458fe"
+                    },
+                    {
+                        "type": 3,
+                        "name": "query - 3",
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "CommonSecurityLog\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n| where Activity has \"vpn\"\r\n| extend Raw = tostring(AdditionalExtensions)\r\n| extend Result = extract(@\"FTNTFGTresult=([^;]+)\",1,Raw)\r\n| extend VPNStatus =\r\n    case(\r\n        Activity has \"failure\" or Activity has \"negotiate_error\" or Result =~ \"ERROR\", \"Failure\",\r\n        Activity has \"login\" or Activity has \"connect\" or Activity has \"tunnel-up\" or Result =~ \"OK\", \"Success\",\r\n        \"Other\"\r\n    )\r\n| summarize Events=count() by VPNStatus",
+                            "size": 0,
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "crossComponentResources": [
+                                "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                            ],
+                            "visualization": "piechart",
+                            "chartSettings": {
+                                "seriesLabelSettings": [
+                                    {
+                                        "seriesName": "Failure",
+                                        "color": "redBright"
+                                    },
+                                    {
+                                        "seriesName": "Other",
+                                        "color": "turquoise"
+                                    }
+                                ]
+                            },
+                            "title": "VPN Connectivity Status"
+                        },
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "Solid",
+                            "x": 13,
+                            "y": 48,
+                            "w": 5,
+                            "h": 6
+                        },
+                        "id": "5dee627e-68dc-497a-ba87-ce4c90226168"
+                    },
+                    {
+                        "type": 3,
+                        "name": "query - 3",
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "FortinetFortigateNetworkSessionSummary_CL\r\n| where TimeGenerated >= ago(30m)\r\n\r\n| summarize\r\n    Connections = sum(Count),\r\n    Attackers = dcount(SourceIP)\r\nby DestinationIP\r\n\r\n//| top 20 by Attackers desc",
+                            "size": 0,
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "crossComponentResources": [
+                                "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+                            ],
+                            "visualization": "piechart",
+                            "chartSettings": {
+                                "seriesLabelSettings": [
+                                    {
+                                        "seriesName": "Failure",
+                                        "color": "red"
+                                    },
+                                    {
+                                        "seriesName": "Other",
+                                        "color": "yellow"
+                                    },
+                                    {
+                                        "seriesName": "10.0.10.11",
+                                        "color": "redBright"
+                                    },
+                                    {
+                                        "seriesName": "10.0.10.4",
+                                        "color": "turquoise"
+                                    },
+                                    {
+                                        "seriesName": "168.63.129.16",
+                                        "color": "blue"
+                                    },
+                                    {
+                                        "seriesName": "169.254.169.254",
+                                        "color": "grayBlue"
+                                    },
+                                    {
+                                        "seriesName": "10.0.10.10",
+                                        "color": "pink"
+                                    },
+                                    {
+                                        "seriesName": "20.42.73.140",
+                                        "color": "blueDarkDark"
+                                    },
+                                    {
+                                        "seriesName": "40.71.12.237",
+                                        "color": "amethyst"
+                                    },
+                                    {
+                                        "seriesName": "23.98.104.164",
+                                        "color": "magenta"
+                                    },
+                                    {
+                                        "seriesName": "40.71.12.254",
+                                        "color": "brown"
+                                    },
+                                    {
+                                        "seriesName": "40.71.12.233",
+                                        "color": "lightBlue"
+                                    },
+                                    {
+                                        "seriesName": "Others",
+                                        "color": "orange"
+                                    }
+                                ],
+                                "ySettings": {
+                                    "numberFormatSettings": {
+                                        "unit": 4,
+                                        "options": {
+                                            "useGrouping": true
+                                        }
+                                    }
+                                },
+                                "group": "DestinationIP",
+                                "createOtherGroup": 10
+                            },
+                            "title": "Top Attacked Server"
+                        },
+                        "styleSettings": {
+                            "showBorder": true,
+                            "borderStyle": "Solid",
+                            "x": 0,
+                            "y": 51,
+                            "w": 8,
+                            "h": 8
+                        },
+                        "id": "5feb646b-b8a5-46ff-81b4-1ca4733aff5f"
+                    }
+                ],
+                "layout": {
+                    "type": "grid"
+                }
+            },
+            "name": "group - 1",
+            "styleSettings": {
+                "showBorder": true,
+                "borderStyle": "solid"
+            },
+            "id": "c00d3efa-ba99-4574-88ef-e93fa8372c83"
+        },
+        {
+            "type": 12,
+            "content": {
+                "version": "NotebookGroup/1.0",
+                "groupType": "editable",
+                "loadType": "explicit",
+                "items": [
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "// =========================================\r\n// FortiGate Live Traffic Monitor v2.0\r\n// =========================================\r\n\r\nCommonSecurityLog\r\n| where DeviceVendor =~ \"Fortinet\"\r\n| where DeviceProduct =~ \"Fortigate\"\r\n\r\n| extend RawExt = tostring(AdditionalExtensions)\r\n\r\n//\r\n// Action\r\n//\r\n| extend ActionRaw = tolower(extract(@\"FTNTFGTaction=([^;]+)\", 1, RawExt))\r\n\r\n| extend Action = case(\r\n    ActionRaw in (\"accept\",\"pass\"), \"🟢 ALLOW\",\r\n    ActionRaw == \"deny\", \"🔴 DENY\",\r\n    ActionRaw == \"drop\", \"🚫 DROP\",\r\n    ActionRaw == \"reject\", \"⛔ REJECT\",\r\n    ActionRaw == \"close\", \"🔵 CLOSE\",\r\n    ActionRaw == \"server-rst\", \"🟡 SERVER RESET\",\r\n    ActionRaw == \"client-rst\", \"🟠 CLIENT RESET\",\r\n    \"⚪ OTHER\"\r\n)\r\n\r\n//\r\n// Severity\r\n//\r\n| extend Severity = case(\r\n    ActionRaw in (\"deny\",\"drop\",\"reject\"), \"🔴 High\",\r\n    ActionRaw == \"close\", \"🟡 Medium\",\r\n    \"🟢 Normal\"\r\n)\r\n\r\n//\r\n// Countries\r\n//\r\n| extend\r\n    SourceCountry = extract(@\"FTNTFGTsrccountry=([^;]+)\", 1, RawExt),\r\n    DestinationCountry = extract(@\"FTNTFGTdstcountry=([^;]+)\", 1, RawExt)\r\n\r\n| extend\r\n    SourceCountry = iff(SourceCountry == \"Bangladesh\", \"🔵 Bangladesh\", SourceCountry),\r\n    DestinationCountry = iff(DestinationCountry == \"Bangladesh\", \"🔵 Bangladesh\", DestinationCountry)\r\n\r\n//\r\n// Policy\r\n//\r\n| extend PolicyName = coalesce(\r\n    extract(@\"FTNTFGTpolicyname=([^;]+)\", 1, RawExt),\r\n    \"N/A\"\r\n)\r\n\r\n//\r\n// Service\r\n//\r\n| extend Service = coalesce(\r\n    extract(@\"FTNTFGTservice=([^;]+)\", 1, RawExt),\r\n    extract(@\"service=([^;]+)\", 1, RawExt),\r\n    tostring(DestinationServiceName),\r\n    tostring(ApplicationProtocol),\r\n    \"Unknown\"\r\n)\r\n\r\n//\r\n// Application\r\n//\r\n| extend Application = coalesce(\r\n    extract(@\"FTNTFGTapp=([^;]+)\", 1, RawExt),\r\n    tostring(ApplicationProtocol),\r\n    \"Unknown\"\r\n)\r\n\r\n//\r\n// Session\r\n//\r\n| extend\r\n    DurationSec = todouble(extract(@\"FTNTFGTduration=([^;]+)\", 1, RawExt)),\r\n    SessionID = extract(@\"FTNTFGTsessionid=([^;]+)\", 1, RawExt)\r\n\r\n//\r\n// Traffic\r\n//\r\n| extend\r\n    UploadMB = round(todouble(coalesce(SentBytes, 0)) / 1024.0 / 1024.0, 2),\r\n    DownloadMB = round(todouble(coalesce(ReceivedBytes, 0)) / 1024.0 / 1024.0, 2),\r\n    TotalMB = round(\r\n        (\r\n            todouble(coalesce(SentBytes, 0)) +\r\n            todouble(coalesce(ReceivedBytes, 0))\r\n        ) / 1024.0 / 1024.0,\r\n        2\r\n    )\r\n\r\n//\r\n// Traffic Level\r\n//\r\n| extend TrafficLevel = case(\r\n    TotalMB >= 1000, \"🔥 Critical\",\r\n    TotalMB >= 500, \"🔴 Very High\",\r\n    TotalMB >= 100, \"🟠 High\",\r\n    TotalMB >= 20, \"🟡 Medium\",\r\n    \"🟢 Low\"\r\n)\r\n\r\n//\r\n// Flow\r\n//\r\n| extend Flow = strcat(\r\n    SourceIP,\r\n    \":\",\r\n    SourcePort,\r\n    \"  ➜  \",\r\n    DestinationIP,\r\n    \":\",\r\n    DestinationPort\r\n)\r\n\r\n//\r\n// Alert Message\r\n//\r\n| extend AlertMessage = iff(\r\n    isempty(trim(\" \", tostring(Message))),\r\n    \"\",\r\n    strcat(\"🔴 \", tostring(Message))\r\n)\r\n\r\n//\r\n// Display\r\n//\r\n| project\r\n    TimeGenerated,\r\n    Severity,\r\n    Action,\r\n    Flow,\r\n    SourceCountry,\r\n    DestinationCountry,\r\n    PolicyName,\r\n    Service,\r\n    Application,\r\n    AppProtocol = ApplicationProtocol,\r\n    UploadMB,\r\n    DownloadMB,\r\n    TotalMB,\r\n    TrafficLevel,\r\n    DurationSec,\r\n    SessionID,\r\n    AlertMessage\r\n\r\n| order by TimeGenerated desc",
+                            "size": 0,
+                            "title": "FortiGate Live Traffic Monitor",
+                            "timeContext": {
+                                "durationMs": 86400000
+                            },
+                            "showRefreshButton": true,
+                            "showExportToExcel": true,
+                            "exportToExcelOptions": "all",
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces",
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "Severity",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "colors",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "contains",
+                                                    "thresholdValue": "High",
+                                                    "representation": "redBright",
+                                                    "text": "{0}{1}"
+                                                },
+                                                {
+                                                    "operator": "contains",
+                                                    "thresholdValue": "Medium",
+                                                    "representation": "yellow",
+                                                    "text": "{0}{1}"
+                                                },
+                                                {
+                                                    "operator": "contains",
+                                                    "thresholdValue": "Normal",
+                                                    "representation": "green",
+                                                    "text": "{0}{1}"
+                                                },
+                                                {
+                                                    "operator": "contains",
+                                                    "thresholdValue": "Low",
+                                                    "representation": "blue",
+                                                    "text": "{0}{1}"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": null,
+                                                    "text": "{0}{1}"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "Action",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "colors",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "contains",
+                                                    "thresholdValue": "ALLOW",
+                                                    "representation": "green",
+                                                    "text": "{0}{1}"
+                                                },
+                                                {
+                                                    "operator": "contains",
+                                                    "thresholdValue": "DENY",
+                                                    "representation": "redBright",
+                                                    "text": "{0}{1}"
+                                                },
+                                                {
+                                                    "operator": "contains",
+                                                    "thresholdValue": "CLOSE",
+                                                    "representation": "blue",
+                                                    "text": "{0}{1}"
+                                                },
+                                                {
+                                                    "operator": "contains",
+                                                    "thresholdValue": "OTHER",
+                                                    "representation": "yellow",
+                                                    "text": "{0}{1}"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "text": "{0}{1}"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "SourceCountry",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "colors",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "representation": null,
+                                                    "text": "{0}{1}"
+                                                },
+                                                {
+                                                    "operator": "contains",
+                                                    "thresholdValue": "Bangladesh",
+                                                    "representation": "green",
+                                                    "text": "{0}{1}"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": null,
+                                                    "text": "{0}{1}"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "DestinationCountry",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "colors",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "contains",
+                                                    "thresholdValue": "Bangladesh",
+                                                    "representation": "green",
+                                                    "text": "{0}{1}"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "text": "{0}{1}"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "TrafficLevel",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "colors",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "contains",
+                                                    "thresholdValue": "Low",
+                                                    "representation": "gray",
+                                                    "text": "{0}{1}"
+                                                },
+                                                {
+                                                    "operator": "contains",
+                                                    "thresholdValue": "Medium",
+                                                    "representation": "yellow",
+                                                    "text": "{0}{1}"
+                                                },
+                                                {
+                                                    "operator": "contains",
+                                                    "thresholdValue": "High",
+                                                    "representation": "orange",
+                                                    "text": "{0}{1}"
+                                                },
+                                                {
+                                                    "operator": "contains",
+                                                    "thresholdValue": "Critical",
+                                                    "representation": "redBright",
+                                                    "text": "{0}{1}"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "text": "{0}{1}"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ],
+                                "filter": true,
+                                "sortBy": [
+                                    {
+                                        "itemKey": "TimeGenerated",
+                                        "sortOrder": 1
+                                    }
+                                ]
+                            },
+                            "sortBy": [
+                                {
+                                    "itemKey": "UploadMB",
+                                    "sortOrder": 1
+                                }
+                            ]
+                        },
+                        "showPin": true,
+                        "name": "FortiGate Live Traffic Monitor",
+                        "styleSettings": {
+                            "margin": "2",
+                            "padding": "2",
+                            "showBorder": true,
+                            "borderStyle": "solid",
+                            "x": 0,
+                            "y": 0,
+                            "w": 24,
+                            "h": 13
+                        },
+                        "id": "7bd40048-8cc7-444a-9828-c0fb21b8b1c4"
+                    }
+                ],
+                "layout": {
+                    "type": "grid"
+                }
+            },
+            "name": "group - 2",
+            "styleSettings": {
+                "showBorder": true,
+                "borderStyle": "solid"
+            },
+            "id": "628e6d7a-ab45-4b90-8ea2-617352cbd912"
+        }
+    ],
+    "fallbackResourceIds": [
+        "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+    ],
+    "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json",
+    "layout": {
+        "type": "flow"
+    },
+    "context": {
+        "ownerId": "/subscriptions/b59c7639-06aa-4045-ae41-3ab12e354e9a/resourcegroups/q-sentinel/providers/microsoft.operationalinsights/workspaces/q-sentinel"
+    }
+}
