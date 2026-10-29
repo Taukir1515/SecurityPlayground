@@ -38,7 +38,7 @@
             "type": 4,
             "isRequired": true,
             "value": {
-              "durationMs": 7776000000
+              "durationMs": 2592000000
             },
             "id": "8bebeca8-a7a2-4975-b3ab-3b61916727ba"
           },
