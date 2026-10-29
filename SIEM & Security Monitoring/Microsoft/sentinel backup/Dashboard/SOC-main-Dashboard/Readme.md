@@ -1,9 +1,9 @@
-# SOC
+# SOC Incident Response Dashboard
 
-## Gallery Template
+### Gallery Template
 Check [Here](./Gallery-template.json)
 
-## ARM Template
+### ARM Template
 Check [Here](./ARM-Template.json)
 
 ![alt text](image.png)
