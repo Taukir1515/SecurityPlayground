@@ -1,5 +1,20 @@
 # Microsoft Defender for Identity
 
+## Table of Contents
+
+- [Pre-configuration](#pre-configuration)
+  - [Windows Server](#windows-server)
+  - [Configure Active Directory Domain Controller (ADDS)](#configure-active-directory-domain-controller-adds)
+- [Directory Service Accounts creation for Microsoft Defender for Identity](#directory-service-accounts-creation-for-microsoft-defender-for-identity)
+- [Directory Service Accounts Delegate Control for Microsoft Defender for Identity](#directory-service-accounts-delegate-control-for-microsoft-defender-for-identity)
+- [Configure Advanced Audit Policy settings for Microsoft Defender for Identity](#configure-advanced-audit-policy-settings-for-microsoft-defender-for-identity)
+- [Configure NTLM Audit Policy settings for Microsoft Defender for Identity](#configure-ntlm-audit-policy-settings-for-microsoft-defender-for-identity)
+- [Configure domain object Auditing Policy settings for Microsoft Defender for Identity](#configure-domain-object-auditing-policy-settings-for-microsoft-defender-for-identity)
+- [Configure Search Results Registry Policy settings for Microsoft Defender for Identity](#configure-search-results-registry-policy-settings-for-microsoft-defender-for-identity)
+- [Download the Microsoft Defender for Identity Sensor](#download-the-microsoft-defender-for-identity-sensor)
+  - [Method-1](#method-1)
+  - [Method-2](#method-2)
+
 ## Pre-configuration
 
 ### Windows Server
