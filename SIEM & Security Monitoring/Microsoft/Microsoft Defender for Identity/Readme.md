@@ -2,25 +2,27 @@
 
 ## Table of Contents
 
-- [Pre-configuration](#pre-configuration)
-  - [Windows Server](#windows-server)
-  - [Configure Active Directory Domain Controller (ADDS)](#configure-active-directory-domain-controller-adds)
-- [Directory Service Accounts creation for Microsoft Defender for Identity](#directory-service-accounts-creation-for-microsoft-defender-for-identity)
-- [Directory Service Accounts Delegate Control for Microsoft Defender for Identity](#directory-service-accounts-delegate-control-for-microsoft-defender-for-identity)
-- [Configure Advanced Audit Policy settings for Microsoft Defender for Identity](#configure-advanced-audit-policy-settings-for-microsoft-defender-for-identity)
-- [Configure NTLM Audit Policy settings for Microsoft Defender for Identity](#configure-ntlm-audit-policy-settings-for-microsoft-defender-for-identity)
-- [Configure domain object Auditing Policy settings for Microsoft Defender for Identity](#configure-domain-object-auditing-policy-settings-for-microsoft-defender-for-identity)
-- [Configure Search Results Registry Policy settings for Microsoft Defender for Identity](#configure-search-results-registry-policy-settings-for-microsoft-defender-for-identity)
-- [Download the Microsoft Defender for Identity Sensor](#download-the-microsoft-defender-for-identity-sensor)
-  - [Method-1](#method-1)
-  - [Method-2](#method-2)
+- [Microsoft Defender for Identity](#microsoft-defender-for-identity)
+  - [Table of Contents](#table-of-contents)
+  - [Pre-configuration](#pre-configuration)
+    - [Windows Server requirement](#windows-server-requirement)
+    - [Configure Active Directory Domain Controller (ADDS)](#configure-active-directory-domain-controller-adds)
+  - [Directory Service Accounts creation for Microsoft Defender for Identity](#directory-service-accounts-creation-for-microsoft-defender-for-identity)
+  - [Directory Service Accounts Delegate Control for Microsoft Defender for Identity](#directory-service-accounts-delegate-control-for-microsoft-defender-for-identity)
+  - [Configure Advanced Audit Policy settings for Microsoft Defender for Identity](#configure-advanced-audit-policy-settings-for-microsoft-defender-for-identity)
+  - [Configure NTLM Audit Policy settings for Microsoft Defender for Identity](#configure-ntlm-audit-policy-settings-for-microsoft-defender-for-identity)
+  - [Configure domain object Auditing Policy settings for Microsoft Defender for Identity](#configure-domain-object-auditing-policy-settings-for-microsoft-defender-for-identity)
+  - [Configure Search Results Registry Policy settings for Microsoft Defender for Identity](#configure-search-results-registry-policy-settings-for-microsoft-defender-for-identity)
+  - [Download the Microsoft Defender for Identity  Sensor](#download-the-microsoft-defender-for-identity--sensor)
+    - [Method-1](#method-1)
+    - [Method-2](#method-2)
 
 ## Pre-configuration
 
-### Windows Server
-Version: Windows Server 2016 or Later  
+### Windows Server requirement
+Version: Windows Server 2019 or Later  
 RAM : 6 GB or more  
-Rename Computer : Kafco-DC-01  
+Rename Computer : Kafco-DC-01 (Optional)  
 
 
 ### Configure Active Directory Domain Controller (ADDS)
@@ -248,11 +250,13 @@ Rename Computer : Kafco-DC-01
 
 
 ### Method-2
-
+1. 
 ![alt text](./image/080.png)
 
+2. 
 ![alt text](./image/081.png)
 
+3. 
 ![alt text](./image/082.png)
 
-Run the onboarding script to AD server. And the MDI sensor will be installed
+4. Run the onboarding script to AD server. And the MDI sensor will be installed
